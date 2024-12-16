@@ -1,8 +1,9 @@
-import five, { Board } from 'johnny-five';
+import five, { Board, Servo } from 'johnny-five';
 import './pins';
 import './servo'
 
 global.five = five
+global.Servo = Servo;
 
 function handleIOReady(io) {
   return () => {
@@ -13,7 +14,6 @@ function handleIOReady(io) {
     });
     board.on('ready', () => {
       console.log('johnny five in browser !!!!');
-      global.Servo = five.Servo;
     });
     board.on('error', console.error);
   }
