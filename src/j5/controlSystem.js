@@ -1,6 +1,6 @@
 import five, { Board } from 'johnny-five';
 import './pins';
-
+import './servo'
 
 global.five = five
 
