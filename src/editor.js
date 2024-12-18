@@ -24,11 +24,16 @@ export default class Editor extends EventEmitter {
   extraKeys() {
     self = this
     return {
-      'Ctrl-Enter': function (cm) {
-        var text = self.selectLine(cm)
-        self.emit('eval', text)
-        self.localStorageSave(cm);
+      'Ctrl-Alt-Enter': (cm) => {
+        var text = this.selectLine(cm)
+        this.emit('eval', text)
+        this.localStorageSave(cm);
       },
+      'Ctrl-Enter': (cm) => {
+        let text = this.selectCurrentBlock(cm);
+        this.emit('eval', text)
+        this.localStorageSave(cm)
+      }
     }
   }
   selectLine(cm) {
