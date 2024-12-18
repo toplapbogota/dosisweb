@@ -12,7 +12,7 @@ export default class Editor extends EventEmitter {
       value: 'dosis',
       theme: 'tomorrow-night-eighties',
       extraKeys: this.extraKeys(),
-
+      lineNumbers: true,
     }
     this.cm = CodeMirror.fromTextArea(parent, opts)
     window.cm = this.cm
