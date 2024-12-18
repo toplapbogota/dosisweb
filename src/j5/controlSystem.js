@@ -1,8 +1,11 @@
-import five, { Board } from 'johnny-five';
+import five, { Board, Stepper, Motor, Servo } from 'johnny-five';
 import './pins';
 
 
 global.five = five
+global.Stepper = Stepper
+global.Motor = Motor
+global.Servo = Servo
 
 function handleIOReady(io) {
   return () => {
@@ -13,7 +16,6 @@ function handleIOReady(io) {
     });
     board.on('ready', () => {
       console.log('johnny five in browser !!!!');
-      global.Servo = five.Servo;
     });
     board.on('error', console.error);
   }
