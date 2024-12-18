@@ -1,5 +1,5 @@
 import { Firmata } from 'firmata-io';
-import serialPort from'../serial/serialport'
+import serialPort from '../serial/serialport'
 
 const initFirmata = (onIOReady) => {
   try {
