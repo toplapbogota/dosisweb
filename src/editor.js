@@ -56,7 +56,7 @@ export default class Editor extends EventEmitter {
     currentText = cm.getLine(endline).trim();
     while (endline < cm.lineCount() && currentText !== '') {
       endline++
-      currentText = cm.getLine(endline).trim();
+      currentText = cm.getLine(endline)?.trim();
     }
     var pos1 = {
       line: startline,
