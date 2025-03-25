@@ -18,8 +18,9 @@ function prender(...pinesID) {
     // pines[pinesID[i]].high();
   }
 }
-global.prender = prender
-global.encender = prender
+global.prender = prender;
+global.encender = prender;
+global.OnArduino = prender;
 
 function apagar(...pinesID) {
   checkPins(pinesID, 'prender');
@@ -31,7 +32,8 @@ function apagar(...pinesID) {
   }
 }
 
-global.apagar = apagar
+global.apagar = apagar;
+global.OffArduino = apagar;
 
 function serie(...pinesID) {
   checkPins(pinesID, 'bucleArduino');
@@ -41,6 +43,7 @@ function serie(...pinesID) {
 }
 
 global.serie = serie;
+global.OnceArduino = serie;
 
 function cambiarIntervalo(argument) {
   intervalo = argument;
@@ -65,19 +68,21 @@ function bucle(...pinesID) {
   bucleIds.push(bucleID);
 }
 
-global.bucle = bucle
+global.bucle = bucle;
+global.LoopArduino = bucle;
 
 function detenerBucle() {
-  clearInterval(bucleID)
+  clearInterval(bucleID);
 }
 
-global.detenerBucle = detenerBucle
+global.detenerBucle = detenerBucle;
+global.PararArduino = detenerBucle;
 
 function apagarTodo() {
   const pins = pinsManager.pins;
   console.log('apagarTodo : ', pins);
   pinsManager.stopAll();
-  clearInterval(bucleID)
+  clearInterval(bucleID);
   bucleID = null;
   bucleIds.forEach(x => {
     clearInterval(x)
