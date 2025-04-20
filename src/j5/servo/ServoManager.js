@@ -2,8 +2,7 @@ class ServoManager {
   // class DosisServoMotor {
   constructor(opts) {
     console.log("opts : ", opts);
-    const s = this.fiveServo = new Servo(opts)
-    console.log('s: ', s);
+    this.fiveServo = new Servo(opts);
 
 
     // console.log('servo en pin no. :', pin)
@@ -16,31 +15,28 @@ class ServoManager {
     if (this.strategy) this.strategy.stop();
     switch (type) {
       case 0:
-        this.strategy = new Bucle(this)
-        break
+        this.strategy = new Bucle(this);
+        break;
       case 1:
         this.strategy = new Ir(this)
-        break
+        break;
       case 2:
         this.strategy = new IrRapido(this)
-        break
+        break;
       case 3:
         this.strategy = new PorPasos(this)
-        break
+        break;
       case 4:
         this.strategy = new BucleConPausa(this)
-        break
+        break;
       case 5:
         this.strategy = new PorPasosEnBucle(this)
-        break
+        break;
       default:
         this.strategy = new Bucle(this)
     }
   }
   actualizar(opts) {
-    const oldRange = this.fiveServo.range;
-    console.log('oldRange: ', oldRange);
-    console.log('opts: actualizar', opts);
     this.fiveServo.range = opts.range;
     if (this.strategy) this.strategy.reset();
     this.elegirEstrategia(opts.estrategia);
@@ -94,7 +90,7 @@ class Bucle extends Strategy {
     super(motor)
     console.log('Bucle created')
   }
-
+  
   muevase(parametros) {
     console.trace();
     console.log("parametros : Bucle", parametros);
@@ -114,14 +110,9 @@ class Ir extends Strategy {
     // console.log('Ir algorithm, this.fiveServo: ',this.fiveServo)
     /*
      Move a servo horn to specified position in degrees, 0-180 (or whatever the current valid range is). If ms is specified, the servo will take that amount of time to move to the position. If rate is specified, the angle change will be split into distance/rate steps for the ms option. If the specified angle is the same as the current angle, no commands are sent.
-     */
-    const targetAngle = parametros.final;
-    const range = this.servoDosis.fiveServo.range;
-    console.log('range: ', range);
-    console.log('targetAngle: ', targetAngle);
+     */   
     const time = parametros.tiempo * 1000;
-    console.log('time: ', time);
-    this.servoDosis.fiveServo.to(targetAngle, time);
+    this.servoDosis.fiveServo.to(parametros.final, time);
   }
 }
 class IrRapido extends Strategy {
@@ -140,7 +131,8 @@ class PorPasos extends Strategy {
   }
 
   muevase(parametros) {
-    this.servoDosis.fiveServo.to(parametros.final, parametros.tiempo * 1000, parametros.pasos)
+    const time = parametros.tiempo * 1000;
+    this.servoDosis.fiveServo.to(parametros.final, time, parametros.pasos)
   }
 }
 class PorPasosEnBucle extends Strategy {
