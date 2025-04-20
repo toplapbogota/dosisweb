@@ -11,18 +11,18 @@ function servo(configuracion) {
   let estrategia = configuracion.estado;
   console.log("estrategia : ", estrategia);
   console.log("pin : ", pin);
-  let servoMotor = servos[pin]
-  let range = [start, final]
+  let servoMotor = servos[pin];
+  let range = [start, final];
   if (!servoMotor) {
-    pines_servos.push(pin)
+    pines_servos.push(pin);
     servoMotor = new ServoManager({
       pin,
       range,
       tiempo
     });
-    servos[pin] = servoMotor
+    servos[pin] = servoMotor;
   } else {
-    console.log('stopping servo')
+    console.log('stopping servo');
     servoMotor.stop();
   }
   servoMotor.actualizar({ estrategia, range });
@@ -31,10 +31,8 @@ function servo(configuracion) {
 global.servo = servo
 
 function apagarServos() {
-  var pin;
-  for (pin in servos) {
-    var servo = servos[pin];
-    servo.stop();
+  for (let pin in servos) {
+    servos[pin].stop();
   }
 }
 
