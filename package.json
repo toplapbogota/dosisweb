@@ -17,6 +17,7 @@
   "dependencies": {
     "avrgirl-arduino": "^5.0.1",
     "browser-process-hrtime": "^1.0.0",
+    "browserglue": "^0.2.2",
     "codemirror-minified": "^5.65.9",
     "events": "^3.3.0",
     "firmata-io": "^2.3.0",
