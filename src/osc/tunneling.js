@@ -5,58 +5,56 @@ import { Client, Message } from 'browserglue';
 const osc = new Client();
 
 let boton1 = false;
-let mensajeControl;
-let mensajeValor;
 
-let escuchar = false;
-let control;
-let valor;
-let callback;
+let funciones = [];
 
 
 
 export function botonOsc() {
-    return boton1;    
+    return boton1;
 }
 
-function activarOSC(nombreCanal, puertoRecibir) {    
-    
-    console.log("Add channel "+ nombreCanal +" binded to udp: "+puertoRecibir);
+function activarOSC(nombreCanal, puertoRecibir) {
+
+    console.log("Add channel " + nombreCanal + " binded to udp: " + puertoRecibir);
 
     osc.addChannel(nombreCanal, puertoRecibir).then(channel => {
-        
+
         channel.on("message", msg => {
             console.log("Received:", msg.address, msg.args);
-            mensajeControl = msg.address.split("/")[2];
+            let mensajeControl = msg.address.split("/")[2];
 
-            console.log("Mensaje : ", mensajeControl);
-            
-            
-            if(mensajeControl === control && escuchar)
-            {
-                if(callback == "prender")
-                {
-                    prender(valor);
+            for (let i = 0; i < funciones.length; i++) {
+
+                let funcion = funciones[i];
+
+                let { control, callback, valor } = funcion;
+
+                if (mensajeControl === control) {
+                    if (callback == "prender") {
+                        prender(valor);
+                    }
+                    else if (callback == "apagar") {
+                        apagar(valor);
+                    }
+                    else if (callback == "servo") {
+                        servo(valor);
+                    }
+                    else if (callback == "apagarServos") {
+                        apagarServos();
+                    }
+
                 }
-                else if(callback == "apagar")
-                {
-                    apagar(valor);
-                }
-              
+
             }
-               
 
-        });   
-    });    
+        });
+    });
 }
 
 global.activarOSC = activarOSC;
 
-function oscEscuchar(msgControl, msgValor, msgCallback) {
-    console.log("oscEscuchar : ", control, valor);
-    escuchar = true;
-    control = msgControl;
-    valor = msgValor;
-    callback = msgCallback;
+function oscEscuchar(msgControl, msgCallback, msgValor) {
+    funciones.push({ control: msgControl, callback: msgCallback, valor: msgValor });
 }
 global.oscEscuchar = oscEscuchar;
