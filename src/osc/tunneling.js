@@ -12,6 +12,9 @@ let escuchar = false;
 let control;
 let valor;
 let callback;
+let configuration;
+
+
 
 
 
@@ -42,7 +45,15 @@ function activarOSC(nombreCanal, puertoRecibir) {
                 {
                     apagar(valor);
                 }
-              
+                else if(callback == "servo")
+                {
+                    servo(configuration);
+                }
+                else if(callback == "apagarServos")
+                {
+                    apagarServos();
+                }
+
             }
                
 
@@ -52,11 +63,12 @@ function activarOSC(nombreCanal, puertoRecibir) {
 
 global.activarOSC = activarOSC;
 
-function oscEscuchar(msgControl, msgValor, msgCallback) {
+function oscEscuchar(msgControl, msgValor, msgCallback, msgConfiguration) {
     console.log("oscEscuchar : ", control, valor);
     escuchar = true;
     control = msgControl;
     valor = msgValor;
     callback = msgCallback;
+    configuration = msgConfiguration;
 }
 global.oscEscuchar = oscEscuchar;
