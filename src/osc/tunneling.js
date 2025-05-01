@@ -43,6 +43,43 @@ function activarOSC(nombreCanal, puertoRecibir) {
                     else if (callback == "apagarServos") {
                         apagarServos();
                     }
+                    else if (callback == "servoAnalogo") {
+                        let v = mapearDato(
+                            parseFloat(msg.args[0]),
+                            [valor.oscMin, valor.oscMax],
+                            [valor.start, valor.final]
+                        );
+
+                        let valorServo = {
+                            pin: valor.pin,
+                            start: valor.start,
+                            final: v,
+                            tiempo: 0,
+                            estado: 2,
+                            pasos: 0
+                        };
+                        servo(valorServo);
+                    }
+                    else if (callback == "switchAnalogo") {
+                        if (valor.tipo === 1) {
+                            if (valor.umbral[0] <= parseFloat(msg.args[0])
+                                && valor.umbral[1] >= parseFloat(msg.args[0])) {
+                                prender(valor.pin);
+                            }
+                            else {
+                                apagar(valor.pin);
+                            }
+                        }
+                        else {
+                            if (valor.umbral[0] <= parseFloat(msg.args[0])
+                                && valor.umbral[1] >= parseFloat(msg.args[0])) {
+                                apagar(valor.pin);
+                            }
+                            else {
+                                prender(valor.pin);
+                            }
+                        }
+                    }
 
                 }
 
@@ -52,9 +89,16 @@ function activarOSC(nombreCanal, puertoRecibir) {
     });
 }
 
+
 global.activarOSC = activarOSC;
 
 function oscEscuchar(msgControl, msgCallback, msgValor) {
     funciones.push({ control: msgControl, callback: msgCallback, valor: msgValor });
 }
 global.oscEscuchar = oscEscuchar;
+
+function mapearDato(valor, rango1, rango2) {
+
+    let valorMapeado = (valor - rango1[0]) * (rango2[1] - rango2[0]) / (rango1[1] - rango1[0]) + rango2[0];
+    return valorMapeado;
+}   
