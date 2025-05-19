@@ -1,4 +1,3 @@
-
 class StepperManger {
     constructor(args) {
         console.log("args : ", args);
@@ -10,6 +9,8 @@ class StepperManger {
         let pins = -1;
         let rpm = -1;
         let pinParar = -1;
+        this.limiteSuperiorRPM = undefined;
+        this.limiteInfriorRPM = undefined;
         if (args.circuito === 'easydriver' || args.circuito === 'a4988') {
             type = 1;
             if (args.pines) {
@@ -39,7 +40,9 @@ class StepperManger {
             this.rpm = 180;
         } else if (args.motor === 'byj48') {
             stepsPerRev = 2048;
-            this.rpm = 15;
+            this.rpm = 15; 
+            this.limiteSuperiorRPM = 19;
+            this.limiteInfriorRPM = 0;           
         }
 
         if (type === -1) {
@@ -74,6 +77,9 @@ class StepperManger {
                 this.strategy = new Bucle(this)
                 break
             case 1:
+                this.strategy = new Ir(this)
+                break
+            case 2:
                 this.strategy = new VayaYVenga(this)
                 break
             default:
@@ -119,6 +125,40 @@ class Strategy {
     }
     stop() { }
     reset() { }
+}
+
+class Ir extends Strategy {
+    constructor(motor) {
+        super(motor)
+        console.log('Ir created')
+    }
+
+    muevase(parametros) {
+
+        let {sentido, pasos: steps, rpm  } = parametros;
+        
+        let direction;
+
+        if(rpm > this.stepperDosis.limiteSuperiorRPM){
+            rpm = this.stepperDosis.limiteSuperiorRPM;
+        }
+        if(rpm < this.stepperDosis.limiteInfriorRPM){
+            rpm = this.stepperDosis.limiteInfriorRPM;
+        }
+
+        if(sentido === 'horario')
+        {
+            direction =  Stepper.DIRECTION.CCW;
+        }
+        else
+        {
+            direction = Stepper.DIRECTION.CW;
+        }
+
+        console.log(rpm);
+        this.stepperDosis.fiveStepper.step({steps, direction, rpm}, ()=> {});
+
+    }
 }
 
 class Bucle extends Strategy {
