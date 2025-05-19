@@ -36,3 +36,5 @@ function detenerPAP() {
 
 
 global.stepper = stepper
+global.detenerPAP = detenerPAP
+global.detenerStepper = detenerPAP

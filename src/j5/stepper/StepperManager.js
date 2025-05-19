@@ -155,86 +155,87 @@ class Ir extends Strategy {
             direction = Stepper.DIRECTION.CW;
         }
 
-        console.log(rpm);
+        //console.log(rpm);
         this.stepperDosis.fiveStepper.step({steps, direction, rpm}, ()=> {});
 
     }
 }
 
-class Bucle extends Strategy {
-    constructor(motor) {
-        super(motor)
-        console.log('Bucle created')
-    }
-
-    muevase(parametros) {
-        let limite = parametros.tiempo * 1000;
-        // console.log("parametros *******: ",parametros);
-        // console.log("limite : ",limite);
-        let starTime = new Date().getTime()
-        // console.log("starTime : ",starTime);
-        // return
-        /*
-        let interval_id = setInterval( ()=> {
-            this.stepperDosis.fiveStepper.step(5, () => {})
-            let lapso = new Date().getTime()-starTime
-            console.log("lapso : ",lapso);
-            if(lapso>limite){
-                clearInterval(interval_id);
-            }
-        }, 60)
-        */
-        // return;
-        let steps;
-        steps = parametros.tiempo * (180 / 60) * 200;
-        steps = 200;
-        steps = parametros.pasos;
-        if (!steps) {
-            if (parametros.vueltas && this.stepperDosis.stepsPerRev) {
-                steps = parametros.vueltas * this.stepperDosis.stepsPerRev;
-            }
-        }
-        console.log("steps : ", steps);
-        let rpm = this.stepperDosis.fiveStepper.rpm();
-        const stepsPerRev = this.stepperDosis.stepsPerRev;
-        console.log('stepsPerRev: ', stepsPerRev);
-        console.log("rpm : ", rpm);
-        // this.stepperDosis.fiveStepper.sweep()
-        /*
-        this.stepperDosis.fiveStepper.step(steps, () => {
-            console.log("parametros : ",parametros);
-            console.log('++++++++++++++++++++++++');
-            console.log("done moving CCW");
-        });
-        */
-
-        this.stepperDosis.fiveStepper.step({steps:2000, direction:Stepper.DIRECTION.CCW}, () => {
-            console.log("done moving CCW");
-
-            // once first movement is done, make 10 revolutions clockwise at previously
-            //      defined speed, accel, and decel by passing an object into stepper.step
-             this.stepperDosis.fiveStepper.step({
-                steps: 2000,
-                direction: Stepper.DIRECTION.CW
-            }, () => console.log("done moving CW"));
-        });
-
-    }
-}
 class VayaYVenga extends Strategy {
     constructor(motor) {
         super(motor)
-        this.isMoving = true;
         console.log('VayaYVenga created')
     }
 
     muevase(parametros) {
-        let limite = parametros.tiempo * 1000;
-        let starTime = new Date().getTime()
-        let steps;
-        steps = parametros.pasos;
+       
+        let {sentido, pasos: steps, rpm  } = parametros;
+        
+        let direction;
+        let direction2;
+
+        if(rpm > this.stepperDosis.limiteSuperiorRPM){
+            rpm = this.stepperDosis.limiteSuperiorRPM;
+        }
+        if(rpm < this.stepperDosis.limiteInfriorRPM){
+            rpm = this.stepperDosis.limiteInfriorRPM;
+        }
+
+        if(sentido === 'horario')
+        {
+            direction =  Stepper.DIRECTION.CCW;
+            direction2 =  Stepper.DIRECTION.CW;
+        }
+        else
+        {
+            direction = Stepper.DIRECTION.CW;
+            direction2 =  Stepper.DIRECTION.CCW;
+        }
+
+        this.stepperDosis.fiveStepper.step({steps, direction, rpm}, () => {
+           this.stepperDosis.fiveStepper.step({
+                steps,
+                direction: direction2
+            }, () => {} );
+        });
+
+    }
+}
+class Bucle extends Strategy {
+    constructor(motor) {
+        super(motor)
+        this.isMoving = true;
+        console.log('Bucle created')
+    }
+
+    muevase(parametros) {
+
+        let {sentido, pasos: steps, rpm  } = parametros;
+        
+        let direction;
+        let direction2;
+
+        if(rpm > this.stepperDosis.limiteSuperiorRPM){
+            rpm = this.stepperDosis.limiteSuperiorRPM;
+        }
+        if(rpm < this.stepperDosis.limiteInfriorRPM){
+            rpm = this.stepperDosis.limiteInfriorRPM;
+        }
+
+        if(sentido === 'horario')
+        {
+            direction =  Stepper.DIRECTION.CCW;
+            direction2 =  Stepper.DIRECTION.CW;
+        }
+        else
+        {
+            direction = Stepper.DIRECTION.CW;
+            direction2 =  Stepper.DIRECTION.CCW;
+        }
+        console.log("CW : ", Stepper.DIRECTION.CW);
+        console.log("CCW : ", Stepper.DIRECTION.CCW);
         if (!this.isMoving) return;
-        this.stepperDosis.fiveStepper.step(steps, () => {
+        this.stepperDosis.fiveStepper.step({steps, direction, rpm}, () => {
             let current_direction = this.stepperDosis.fiveStepper.direction();
             let new_direction = -1;
             if (current_direction === 0) {
