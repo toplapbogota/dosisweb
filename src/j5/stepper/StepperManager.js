@@ -41,7 +41,7 @@ class StepperManger {
         } else if (args.motor === 'byj48') {
             stepsPerRev = 2048;
             this.rpm = 15; 
-            this.limiteSuperiorRPM = 19;
+            this.limiteSuperiorRPM = 17;
             this.limiteInfriorRPM = 0;           
         }
 
