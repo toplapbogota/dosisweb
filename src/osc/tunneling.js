@@ -80,6 +80,34 @@ function activarOSC(nombreCanal, puertoRecibir) {
                             }
                         }
                     }
+                    else if (callback == "stepper") {
+                        stepper(valor);
+                    }
+                    else if (callback == "detenerStepper") {
+                        detenerPAP();
+                    }
+                    else if (callback == "stepperAnalogo") 
+                    {
+                        valor.estado = 1;
+                        if(parseFloat(msg.args[0]) > valor.umbral[0]  
+                            && parseFloat(msg.args[0]) < valor.umbral[1] )
+                        {
+                            console.log("detener stepper");
+                            detenerPAP();
+                        }       
+                        else if (valor.umbral[0] <= parseFloat(msg.args[0]))
+                        {
+                            console.log("anti");
+                            valor.sentido = "anti";
+                            stepper(valor); 
+                        }
+                        else if(valor.umbral[1] >= parseFloat(msg.args[0]))
+                        {         
+                            console.log("horario");                      
+                            valor.sentido = "horario";
+                            stepper(valor); 
+                        }                  
+                    }
 
                 }
 
