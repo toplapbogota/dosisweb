@@ -41,7 +41,7 @@ class StepperManger {
         } else if (args.motor === 'byj48') {
             stepsPerRev = 2048;
             this.rpm = 15; 
-            this.limiteSuperiorRPM = 19;
+            this.limiteSuperiorRPM = 17;
             this.limiteInfriorRPM = 0;           
         }
 
@@ -82,6 +82,9 @@ class StepperManger {
             case 2:
                 this.strategy = new VayaYVenga(this)
                 break
+            case 3:
+                this.strategy = new MovimientoContinuo(this)
+                break    
             default:
                 this.strategy = new Bucle(this)
         }
@@ -248,6 +251,54 @@ class Bucle extends Strategy {
             this.stepperDosis.fiveStepper.step({
                 steps: steps,
                 direction: new_direction
+            }, () => {
+                this.muevase(parametros)
+            });
+        });
+    }
+    stop() {
+        this.isMoving = false;
+    }
+}
+
+class MovimientoContinuo extends Strategy {
+    constructor(motor) {
+        super(motor)
+        this.isMoving = true;
+        console.log('Continued Motion created')
+    }
+
+    muevase(parametros) {
+
+        let {sentido, pasos: steps, rpm  } = parametros;
+        
+        let direction;
+
+        if(rpm > this.stepperDosis.limiteSuperiorRPM){
+            rpm = this.stepperDosis.limiteSuperiorRPM;
+        }
+        if(rpm < this.stepperDosis.limiteInfriorRPM){
+            rpm = this.stepperDosis.limiteInfriorRPM;
+        }
+
+        if(sentido === 'horario')
+        {
+            direction =  Stepper.DIRECTION.CCW;
+        }
+        else
+        {
+            direction = Stepper.DIRECTION.CW;
+        }
+        console.log("CW : ", Stepper.DIRECTION.CW);
+        console.log("CCW : ", Stepper.DIRECTION.CCW);
+        if (!this.isMoving) return;
+        this.stepperDosis.fiveStepper.step({steps, direction, rpm}, () => {
+            //let current_direction = this.stepperDosis.fiveStepper.direction();
+            
+            if (!this.isMoving) return;
+            this.stepperDosis.fiveStepper.step({
+                steps: steps,
+                //direction: new_direction
             }, () => {
                 this.muevase(parametros)
             });
