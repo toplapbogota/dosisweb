@@ -2,6 +2,7 @@ import five, { Board, Stepper, Motor, Servo } from 'johnny-five';
 import './pins';
 import './servo';
 import './stepper';
+import './keyboard';
 
 global.five = five
 global.Stepper = Stepper
