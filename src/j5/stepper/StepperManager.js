@@ -284,13 +284,13 @@ class MovimientoContinuo extends Strategy {
         if(sentido === 'horario')
         {
             direction =  Stepper.DIRECTION.CCW;
+            //console.log("horario");
         }
         else
         {
             direction = Stepper.DIRECTION.CW;
+            //console.log("anti");
         }
-        console.log("CW : ", Stepper.DIRECTION.CW);
-        console.log("CCW : ", Stepper.DIRECTION.CCW);
         if (!this.isMoving) return;
         this.stepperDosis.fiveStepper.step({steps, direction, rpm}, () => {
             //let current_direction = this.stepperDosis.fiveStepper.direction();
