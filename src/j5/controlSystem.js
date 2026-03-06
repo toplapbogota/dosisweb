@@ -3,6 +3,7 @@ import './pins';
 import './servo';
 import './stepper';
 import './keyboard';
+import './dcMotor';
 
 global.five = five
 global.Stepper = Stepper
