@@ -10,6 +10,9 @@ class MotorManager {
             case 0:
                 this.strategy = new Mover(this);
                 break;
+            case 1:
+                this.strategy = new MoverAscDesc(this);
+                break;
             default:
                 this.strategy = new Mover(this)
         }
@@ -17,6 +20,7 @@ class MotorManager {
     actualizar(opts) {
         console.log("opts : ", opts);
         if (this.strategy) this.strategy.reset();
+        console.log("opts.estado : ", opts.estado);
         this.elegirEstrategia(opts.estado);
     }
     ejecutarInstruccion(parametros) {
@@ -33,7 +37,7 @@ class Strategy {
         this.motorManager = motorManager;
     }
     muevase(parametros) {
-        console.log('muevase usando mover()');
+        console.log('muevase usando .fiveMotor');
     }
     stop() { }
     reset() { }
@@ -54,6 +58,78 @@ class Mover extends Strategy {
         }
     }
 }
+
+class MoverAscDesc extends Strategy {
+    constructor(motorManager) {
+        super(motorManager);
+        this._intervalo = null;
+        this._contadorVel = 30;
+        console.log('MoverAscDesc created');
+    }
+    stop() {
+        clearInterval(this._intervalo);
+        this._intervalo = null;
+    }
+    muevase(parametros) {
+        let {dir, tiempo, modo} = parametros;
+        if(dir === 'derecha') {
+            if(modo === 'ascendente') {
+                let tiempoMillis = tiempo || 1000;
+                if (this._intervalo) return;
+                this._contadorVel = 30;
+                this._intervalo = setInterval(() => {
+                    this._contadorVel += 10;
+                    //console.log('contadorVel : ', this._contadorVel);
+                    if (this._contadorVel > 150) {
+                        this._contadorVel = 150;
+                    }
+                    this.motorManager.fiveMotor.forward(this._contadorVel);
+                }, tiempoMillis);
+            }
+            else if(modo === 'descendente') {
+                let tiempoMillis = tiempo || 1000;
+                //console.log('tiempoMillis : ', tiempoMillis);
+                if (this._intervalo) return;
+                this._contadorVel = 150;
+                this._intervalo = setInterval(() => {
+                    this._contadorVel -= 10;
+                    //console.log('contadorVel : ', this._contadorVel);
+                    if (this._contadorVel < 30) {
+                        this._contadorVel = 30;
+                    }
+                    this.motorManager.fiveMotor.forward(this._contadorVel);
+                }, tiempoMillis);
+            }
+        }
+        else if(dir === 'izquierda') {
+            if(modo === 'ascendente') {
+                let tiempoMillis = tiempo || 1000;
+                if (this._intervalo) return;
+                this._contadorVel = 30;
+                this._intervalo = setInterval(() => {
+                    this._contadorVel += 10;
+                    if (this._contadorVel > 150) {
+                        this._contadorVel = 150;
+                    }
+                    this.motorManager.fiveMotor.reverse(this._contadorVel);
+                }, tiempoMillis);
+            }
+            else if(modo === 'descendente') {
+                let tiempoMillis = tiempo || 1000;
+                if (this._intervalo) return;
+                this._contadorVel = 150;
+                this._intervalo = setInterval(() => {
+                    this._contadorVel -= 10;
+                    if (this._contadorVel < 30) {
+                        this._contadorVel = 30;
+                    }
+                    this.motorManager.fiveMotor.reverse(this._contadorVel);
+                }, tiempoMillis);
+            }
+        }
+    }
+}
+
 
 export default MotorManager;
 

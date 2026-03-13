@@ -43,7 +43,7 @@ function dcmotor(configuracion) {
     {
         motorDC.stop();
     }
-    motorDC.actualizar({ configuracion});
+    motorDC.actualizar(configuracion);
     motorDC.ejecutarInstruccion(configuracion);
     
 

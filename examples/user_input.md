@@ -48,14 +48,17 @@ servo({pin:2,estado:2, start:0, final:90, tiempo:0, pasos:0})
 
 servo({pin:2,estado:3, start:0, final:180, tiempo:10, pasos:5})
 
+apagarServos()
 
-dcmotor({pin1:9,pin2:7,pin3:8,dir:"derecha",vel:200})
+
+dcmotor({pin1:9,pin2:7,pin3:8,dir:"izquierda",vel:50,estado:1,modo:"ascendente",tiempo:2000})
 
 apagarMotoresDC()
 
+
+
 apagarMotores();
 
-apagarServos()
 
 
 
@@ -68,4 +71,12 @@ stepper({pines:[12,10,11,13],sentido:"horario",rpm:15,pasos:200,circuito:"uln200
 stepper({pines:[12,10,11,13],sentido:"anti",rpm:15,pasos:2000,circuito:"uln2003",motor:"byj48",estado:2})
 
 detenerStepper()
+
+teclado({estado:0,tiempo:5000})
+
+teclado({estado:1,tiempo:0})
+
+pararTeclado();
+
+
 ```
