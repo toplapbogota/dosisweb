@@ -50,8 +50,9 @@ servo({pin:2,estado:3, start:0, final:180, tiempo:10, pasos:5})
 
 apagarServos()
 
-
+dcmotor({pin1:9,pin2:7,pin3:8,dir:"izquierda",vel:50,estado:0,modo:"ascendente",tiempo:2000})
 dcmotor({pin1:9,pin2:7,pin3:8,dir:"izquierda",vel:50,estado:1,modo:"ascendente",tiempo:2000})
+dcmotor({pin1:9,pin2:7,pin3:8,dir:"derecha",vel:250,estado:2,modo:"descendente",tiempo:3000})
 
 apagarMotoresDC()
 

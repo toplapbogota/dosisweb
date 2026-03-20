@@ -13,6 +13,9 @@ class MotorManager {
             case 1:
                 this.strategy = new MoverAscDesc(this);
                 break;
+            case 2:
+                this.strategy = new PrenderAscDesc(this);
+                break;
             default:
                 this.strategy = new Mover(this)
         }
@@ -127,6 +130,30 @@ class MoverAscDesc extends Strategy {
                 }, tiempoMillis);
             }
         }
+    }
+}
+
+class PrenderAscDesc extends Strategy {
+    constructor(motorManager) {
+        super(motorManager);
+        console.log('PrenderAscDesc created');
+    }
+    muevase(parametros) {
+        let {dir, vel, tiempo} = parametros;
+        console.log('PrenderAscDesc muevase : ', parametros);
+        let tiempoMillis = tiempo || 1000;
+        if (this._timer) return;
+        if (dir === 'derecha') {
+            this.motorManager.fiveMotor.forward(vel);
+        } else if (dir === 'izquierda') {
+            this.motorManager.fiveMotor.reverse(vel);
+        } else {
+            return;
+        }
+        this._timer = setTimeout(() => {
+            this.motorManager.fiveMotor.stop();
+            this._timer = null;
+        }, tiempoMillis);
     }
 }
 
