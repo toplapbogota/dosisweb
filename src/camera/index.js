@@ -10,3 +10,23 @@ export async function startWebcam() {
     alert("Could not access webcam. Make sure to allow permission.");
   }
 }
+
+
+const webcams = [];
+function webcam(configuracion) {
+  let x = configuracion.x;
+  let y = configuracion.y;
+  let width = configuracion.ancho;
+  let height = configuracion.alto;
+  video.style.position = 'absolute';
+  video.style.left = x + 'px';
+  video.style.top = y + 'px';
+  video.style.width = width + 'px';
+  video.style.height = height + 'px';
+
+  startWebcam();
+}
+
+global.webcam = webcam
+
+
