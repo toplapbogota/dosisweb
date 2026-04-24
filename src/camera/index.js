@@ -79,5 +79,22 @@ async function webcam(configuracion) {
   }
 }
 
+function borrarWebcam(configuracion) {
+  const indiceCamara = configuracion.camara ?? 0;
+  const duplicado = configuracion.duplicado ?? 0;
+
+  const indice = webcams.findIndex(w => w.indiceCamara === indiceCamara && w.duplicado === duplicado);
+  if (indice === -1) {
+    console.warn(`No existe webcam con camara: ${indiceCamara}, duplicado: ${duplicado}`);
+    return;
+  }
+
+  const { video, stream } = webcams[indice];
+  stream.getTracks().forEach(track => track.stop());
+  video.remove();
+  webcams.splice(indice, 1);
+}
+
 global.webcam = webcam
+global.borrarWebcam = borrarWebcam
 global.listarCamaras = listarCamaras
