@@ -16,13 +16,38 @@ async function webcam(configuracion) {
   const width = configuracion.ancho ?? 320;
   const height = configuracion.alto ?? 240;
   const indiceCamara = configuracion.camara ?? 0;
+  const duplicado = configuracion.duplicado ?? 0;
 
-  const existente = webcams.find(w => w.indiceCamara === indiceCamara);
+  const existente = webcams.find(w => w.indiceCamara === indiceCamara && w.duplicado === duplicado);
+
   if (existente) {
     existente.video.style.left = x + 'px';
     existente.video.style.top = y + 'px';
     existente.video.style.width = width + 'px';
     existente.video.style.height = height + 'px';
+    return;
+  }
+
+  const video = document.createElement('video');
+  video.id = `webcam-${indiceCamara}-${duplicado}`;
+  video.autoplay = true;
+  video.playsInline = true;
+  video.style.position = 'absolute';
+  video.style.left = x + 'px';
+  video.style.top = y + 'px';
+  video.style.width = width + 'px';
+  video.style.height = height + 'px';
+  document.body.appendChild(video);
+
+  if (duplicado > 0) {
+    const original = webcams.find(w => w.indiceCamara === indiceCamara && w.duplicado === 0);
+    if (!original) {
+      console.warn(`No existe la cámara original ${indiceCamara}. Llama primero sin duplicado.`);
+      video.remove();
+      return;
+    }
+    video.srcObject = original.stream;
+    webcams.push({ indiceCamara, duplicado, video, stream: original.stream });
     return;
   }
 
@@ -41,23 +66,12 @@ async function webcam(configuracion) {
     console.error("Error enumerando cámaras:", err);
   }
 
-  const video = document.createElement('video');
-  video.id = `webcam-${indiceCamara}`;
-  video.autoplay = true;
-  video.playsInline = true;
-  video.style.position = 'absolute';
-  video.style.left = x + 'px';
-  video.style.top = y + 'px';
-  video.style.width = width + 'px';
-  video.style.height = height + 'px';
-  document.body.appendChild(video);
-
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: deviceId ? { deviceId: { exact: deviceId } } : true
     });
     video.srcObject = stream;
-    webcams.push({ indiceCamara, video, stream });
+    webcams.push({ indiceCamara, duplicado, video, stream });
   } catch (err) {
     console.error("Error accessing webcam:", err);
     alert("Could not access webcam. Make sure to allow permission.");
