@@ -73,11 +73,28 @@ stepper({pines:[12,10,11,13],sentido:"anti",rpm:15,pasos:2000,circuito:"uln2003"
 
 detenerStepper()
 
+//activa el pin y lo mantiene activo por un intervalo de tiempo
 teclado({estado:0,tiempo:5000})
 
+//activa el pin mientras se mantenga la tecla presionada
 teclado({estado:1,tiempo:0})
 
+//desactiva la función de teclado
 pararTeclado();
+
+
+prender(2,3,4,5)
+
+apagar(2,3,4,5)
+
+serie(2,3)
+
+bucle(2,3,4,5)
+
+cambiarIntervalo(500)
+
+detenerBucle()
+
 
 
 ```
