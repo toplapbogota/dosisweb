@@ -26,13 +26,13 @@ export default class Editor extends EventEmitter {
     return {
       'Ctrl-Alt-Enter': (cm) => {
         var text = this.selectLine(cm)
-        this.emit('eval', text)
         this.localStorageSave(cm);
+        this.emit('eval', text)
       },
       'Ctrl-Enter': (cm) => {
         let text = this.selectCurrentBlock(cm);
-        this.emit('eval', text)
         this.localStorageSave(cm)
+        this.emit('eval', text)
       }
     }
   }
