@@ -1,7 +1,7 @@
 import CodeMirror from 'codemirror-minified/lib/codemirror'
 import 'codemirror-minified/mode/javascript/javascript'
 import EventEmitter from 'events'
-import { APP_NAME } from './constants'
+import { appStorage } from './storage/appStorage'
 
 export default class Editor extends EventEmitter {
   constructor(parent) {
@@ -68,7 +68,6 @@ export default class Editor extends EventEmitter {
   }
   localStorageSave(cm) {
     let lastCode = cm.doc.getValue();
-    let stringToSave = JSON.stringify({ code: lastCode })
-    localStorage.setItem(APP_NAME, stringToSave)
+    appStorage.setItem('code', lastCode)
   }
 }
