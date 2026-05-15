@@ -3,6 +3,7 @@ import GUI from 'lil-gui';
 import init from '../init.js';
 
 import ThemeController from '../editor/themes/themesController.js';
+import themesBackgroundColors from '../editor/themes/themesBackgroundsColors.js';
 
 const gui = new GUI();
 
@@ -19,8 +20,14 @@ export function setupThemeController(editor) {
       'color: #0e93e0;background: #aaefe5;',
       theme
     );
+    const backgroundColor =
+      themesBackgroundColors[theme];
+  
+    if (backgroundColor) {
+      document.body.style.backgroundColor =
+        backgroundColor;
+    }
   });
-
   return themeController;
 }
 
