@@ -1,0 +1,81 @@
+const themes = {
+  "lightThemes": [
+    "3024-day",
+    "base16-light",
+    "duotone-light",
+    "paraiso-light",
+    "xq-light"
+  ],
+  "darkThemesWithLightCounterparts": [
+    "3024-night",
+    "base16-dark",
+    "duotone-dark",
+    "paraiso-dark",
+    "xq-dark"
+  ],
+  "darkThemesWithoutLightCounterparts": [
+    "ayu-dark",
+    "erlang-dark",
+    "gruvbox-dark",
+    "lesser-dark",
+    "material-darker",
+    "pastel-on-dark",
+    "tomorrow-night-bright",
+    "tomorrow-night-eighties"
+  ],
+  "restOfThemes": [
+    "abbott",
+    "abcdef",
+    "ambiance-mobile",
+    "ambiance",
+    "ayu-mirage",
+    "bespin",
+    "blackboard",
+    "cobalt",
+    "colorforth",
+    "darcula",
+    "dracula",
+    "eclipse",
+    "elegant",
+    "hopscotch",
+    "icecoder",
+    "idea",
+    "isotope",
+    "juejin",
+    "liquibyte",
+    "lucario",
+    "material-ocean",
+    "material-palenight",
+    "material",
+    "mbo",
+    "mdn-like",
+    "midnight",
+    "monokai",
+    "moxer",
+    "neat",
+    "neo",
+    "night",
+    "nord",
+    "oceanic-next",
+    "panda-syntax",
+    "railscasts",
+    "rubyblue",
+    "seti",
+    "shadowfox",
+    "solarized",
+    "ssms",
+    "the-matrix",
+    "ttcn",
+    "twilight",
+    "vibrant-ink",
+    "yeti",
+    "yonce",
+    "zenburn"
+  ],
+  current:"tomorrow-night-eighties",
+};
+
+themes.allThemes = Object.values(themes).flat();
+
+
+export default themes;
