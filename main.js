@@ -1,5 +1,7 @@
 import './style.css'
 import './styles/codemirror.css'
+import './src/editor/themes/loadThemes'
 import './styles/tomorrow-night-eighties.css'
+import './theme.css'
 import './src/osc/tunneling'
 import './src/app'

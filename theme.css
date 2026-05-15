@@ -1,0 +1,4 @@
+/*make the editor transparent so we can see the background, the camera*/
+#editor-container .CodeMirror{
+    background: transparent;
+}
