@@ -38,9 +38,6 @@ export default class Editor extends EventEmitter {
   }
   selectLine(cm) {
     const line = cm.getLine(cm.getCursor().line);
-    let lastCode = cm.doc.getValue();
-    let stringToSave = JSON.stringify({ code: lastCode })
-    localStorage.setItem(APP_NAME, stringToSave)
     return line
   }
 
