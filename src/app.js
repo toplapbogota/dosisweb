@@ -3,12 +3,14 @@ import './polyfills/hrtime'
 
 import Editor from './editor'
 import handleEval from './evaluation'
-import storedObject from './session'
+import { appStorage } from './storage/appStorage'
 
 
 const editorTextArea = document.querySelector('textarea')
 
 const editor = new Editor(editorTextArea)
-storedObject && editor.cm.setValue(storedObject.code)
+
+const storedCode = appStorage.getItem('code');
+storedCode && editor.cm.setValue(storedCode)
 
 editor.on('eval', handleEval)
