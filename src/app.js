@@ -10,9 +10,15 @@ import { setupThemeController } from './ui/gui'
 const editorTextArea = document.querySelector('textarea')
 
 const editor = new Editor(editorTextArea)
+editor.on('eval', handleEval)
 
 const storedCode = appStorage.getItem('code');
 storedCode && editor.cm.setValue(storedCode)
 
 const themeController = setupThemeController(editor.cm)
-editor.on('eval', handleEval)
+themeController.on('themeChanged', (theme) => {
+  appStorage.setItem('theme', theme);
+})
+
+const storedTheme = appStorage.getItem('theme');
+storedTheme && themeController.setTheme(storedTheme)
