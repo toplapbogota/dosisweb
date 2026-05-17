@@ -1,7 +1,7 @@
 import CodeMirror from 'codemirror-minified/lib/codemirror'
 import 'codemirror-minified/mode/javascript/javascript'
 import EventEmitter from 'events'
-import { appStorage } from './storage/appStorage'
+import { appStorage } from '../storage/appStorage'
 
 export default class Editor extends EventEmitter {
   constructor(parent) {
