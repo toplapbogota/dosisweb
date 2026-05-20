@@ -1,19 +1,15 @@
 import { Client, Message } from 'browserglue';
 
-
-
-const osc = new Client();
-
-let boton1 = false;
+let osc;
 
 let funciones = [];
 
-
-export function botonOsc() {
-    return boton1;
-}
-
 function activarOSC(nombreCanal, puertoRecibir) {
+    if (osc) {
+        console.log("OSC ya está activo");
+        return;
+    }
+    osc = new Client();
 
     console.log("Add channel " + nombreCanal + " binded to udp: " + puertoRecibir);
 
