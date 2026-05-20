@@ -1,5 +1,6 @@
 import './ui/gui'
 import './polyfills/hrtime'
+import './camera/index'
 
 import Editor from './editor'
 import handleEval from './evaluation'
