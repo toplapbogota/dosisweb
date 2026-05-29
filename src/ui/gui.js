@@ -24,8 +24,12 @@ export function setupThemeController(editor) {
       themesBackgroundColors[theme];
   
     if (backgroundColor) {
-      document.body.style.backgroundColor =
-        backgroundColor;
+      document.documentElement.style.backgroundColor = backgroundColor;
+      document.body.style.backgroundColor = backgroundColor;
+      const editorContainer = document.getElementById('editor-container');
+      if (editorContainer) {
+        editorContainer.style.backgroundColor = backgroundColor;
+      }
     }
   });
   return themeController;
