@@ -5,7 +5,7 @@ prender(13)
 apagar(13)
 
  
- console.log("Escapar de la pantalla") 
+ console.log("Dosis Web - Live Coding & Hardware Hacking") 
 
  toplap Bogotá ::  CTRL+enter
 

@@ -18,7 +18,7 @@ export default class Editor extends EventEmitter {
     window.cm = this.cm
     this.cm.refresh()
 
-    this.cm.setValue('\n \n console.log("Escapar de la pantalla") \n\n toplap Bogotá ::  CTRL+enter')
+    this.cm.setValue('\n \n console.log("Dosis Web - Live Coding & Harware Hacking") \n\n toplap Bogotá ::  CTRL+enter')
 
   }
   extraKeys() {
