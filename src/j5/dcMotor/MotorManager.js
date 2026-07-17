@@ -16,6 +16,9 @@ class MotorManager {
             case 2:
                 this.strategy = new PrenderAscDesc(this);
                 break;
+            case 3:
+                this.strategy = new VaYVuelve(this);
+                break;
             default:
                 this.strategy = new Mover(this)
         }
@@ -156,6 +159,66 @@ class PrenderAscDesc extends Strategy {
         }, tiempoMillis);
     }
 }
+
+class VaYVuelve extends Strategy {
+    constructor(motorManager) {
+        super(motorManager);
+        this._timer = null;
+        console.log('VaYVuelve created');
+    }
+    stop() {
+        clearTimeout(this._timer);
+        this._timer = null;
+        this.motorManager.fiveMotor.stop();
+    }
+    muevase(parametros) {
+        let {dir, tiempo, vel, modo} = parametros;
+        if (this._timer) return;
+
+        let ida, vuelta;
+        if (dir === 'derecha') {
+            ida = 'forward';
+            vuelta = 'reverse';
+        } else if (dir === 'izquierda') {
+            ida = 'reverse';
+            vuelta = 'forward';
+        } else {
+            return;
+        }
+
+        let tiempoMillis = tiempo || 1000;
+        let pausaFrenado = 150;
+        let infinito = modo === 0;
+        let ciclosRestantes = modo === undefined ? 1 : modo;
+
+        const mover = (sentido, callback) => {
+            this.motorManager.fiveMotor.stop();
+            this._timer = setTimeout(() => {
+                this.motorManager.fiveMotor[sentido](vel);
+                this._timer = setTimeout(callback, tiempoMillis);
+            }, pausaFrenado);
+        };
+
+        const ciclo = () => {
+            mover(ida, () => {
+                mover(vuelta, () => {
+                    if (!infinito) {
+                        ciclosRestantes--;
+                        if (ciclosRestantes <= 0) {
+                            this.motorManager.fiveMotor.stop();
+                            this._timer = null;
+                            return;
+                        }
+                    }
+                    ciclo();
+                });
+            });
+        };
+
+        ciclo();
+    }
+}
+
 
 
 export default MotorManager;
