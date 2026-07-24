@@ -1,0 +1,13 @@
+diff --git a/node_modules/avrgirl-arduino/lib/browser-serialport.js b/node_modules/avrgirl-arduino/lib/browser-serialport.js
+index 4483dd1..8d14be7 100644
+--- a/node_modules/avrgirl-arduino/lib/browser-serialport.js
++++ b/node_modules/avrgirl-arduino/lib/browser-serialport.js
+@@ -25,7 +25,7 @@ class SerialPort extends EventEmitter {
+   }
+ 
+   open(callback) {
+-    window.navigator.serial.requestPort(this.requestOptions)
++    Promise.resolve(this.port || window.navigator.serial.requestPort(this.requestOptions))
+       .then(serialPort => {
+         this.port = serialPort;
+         if (this.isOpen) return;
