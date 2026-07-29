@@ -4,28 +4,22 @@ let stepperMotor;
 let sm;
 function stepper(configuracion){
     console.log("configuracion 1 : ",configuracion);
-    /*
-    let pin = configuracion.pin;
-    let start = configuracion.start;
-    let final = configuracion.final;
-    let tiempo = configuracion.tiempo;
-    let estrategia = configuracion.estado;
-    console.log("estrategia : ",estrategia);
-    console.log("pin : ",pin);
-    // let stepperMotor = ste[pin]
-    let range = [start, final]
-    */
+
+    const ejecutar = () => {
+        stepperMotor.actualizar(configuracion);
+        stepperMotor.ejecutarInstruccion(configuracion);
+    };
+
     if(!stepperMotor){
-        // pines_servos.push(pin)
         stepperMotor = new StepperManager(configuracion);
         sm = stepperMotor.fiveStepper;
-        // console.log("sm : ",sm);
-        // servos[pin]=servoMotor
+        ejecutar();
     }else{
         stepperMotor.stop();
+        // Si el motor sigue físicamente en movimiento, esperar a que termine
+        // antes de mandar el siguiente comando (ver StepperManager.alTerminar).
+        stepperMotor.alTerminar(ejecutar);
     }
-    stepperMotor.actualizar(configuracion);
-    stepperMotor.ejecutarInstruccion(configuracion);
 }
 
 function detenerPAP() {

@@ -63,6 +63,33 @@ class StepperManger {
         })
         console.log('type: ===========', type);
 
+        // El sketch (AdvancedFirmata) sobreescribe el movimiento en curso si le
+        // llega un nuevo STEPPER_STEP para el mismo dispositivo antes de terminar
+        // el anterior, y solo envía UNA confirmación "done" por movimiento real.
+        // Si se manda una instrucción nueva mientras la física sigue en curso,
+        // el callback de la instrucción vieja nunca se resuelve y el flujo queda
+        // colgado esperando una confirmación que no llegará. Por eso se envuelve
+        // step() para saber cuándo es seguro enviar la siguiente instrucción.
+        this.estaOcupado = false;
+        this._pendiente = null;
+        const stepOriginal = this.fiveStepper.step.bind(this.fiveStepper);
+        this.fiveStepper.step = (opts, callback) => {
+            this.estaOcupado = true;
+            stepOriginal(opts, (...args) => {
+                this.estaOcupado = false;
+                // El callback original puede encadenar sincrónicamente otro
+                // step() (p.ej. Bucle/MovimientoContinuo van y vuelven), lo que
+                // vuelve a poner estaOcupado en true. Solo se dispara lo
+                // pendiente cuando de verdad queda libre.
+                if (callback) callback(...args);
+                if (this._pendiente && !this.estaOcupado) {
+                    const pendiente = this._pendiente;
+                    this._pendiente = null;
+                    pendiente();
+                }
+            });
+        };
+
 
         // console.log('servo en pin no. :', pin)
         // thispinValue = args.pin ;
@@ -116,6 +143,16 @@ class StepperManger {
     stop() {
         // this.fiveStepper.stop();
         this.strategy.stop();
+    }
+    // Ejecuta fn ya mismo si el motor está libre, o la guarda para ejecutarla
+    // en cuanto termine el movimiento físico en curso. Una nueva llamada
+    // reemplaza cualquier pendiente anterior (gana la más reciente).
+    alTerminar(fn) {
+        if (!this.estaOcupado) {
+            fn();
+        } else {
+            this._pendiente = fn;
+        }
     }
 }
 class Strategy {
