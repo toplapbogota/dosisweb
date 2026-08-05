@@ -252,12 +252,7 @@ class PorPasosEnBucle extends Strategy {
   constructor(motor) {
     super(motor)
     this.flag = true;
-    this.bindedOnMoveComplete = this.onMoveComplete.bind(this)
-    this.servoDosis.fiveServo.on("move:complete", this.bindedOnMoveComplete)
-  }
-  onMoveComplete() {
-    this.flag = !this.flag;
-    this.muevase();
+    this._tween = null;
   }
 
   muevase(parametros) {
@@ -266,15 +261,32 @@ class PorPasosEnBucle extends Strategy {
     } else {
       parametros = this.parametros;
     }
-    if (this.flag) {
-      this.servoDosis.fiveServo.to(parametros.final, parametros.tiempo * 1000, parametros.pasos);
-    } else {
-      this.servoDosis.fiveServo.to(parametros.start, parametros.tiempo * 1000, parametros.pasos)
-    }
+    this.stop();
+
+    const fiveServo = this.servoDosis.fiveServo;
+    const { start, final, tiempo, pasos } = parametros;
+    const objetivo = this.flag ? final : start;
+    const duracionMs = (tiempo || 0) * 1000;
+    const inicio = fiveServo.position >= 0 ? fiveServo.position : (this.flag ? start : final);
+    const pasoMs = pasos ? Math.max(10, Math.round(1000 / pasos)) : 30;
+
+    this._tween = new Tween({
+      fiveServo,
+      keyFrames: [inicio, objetivo],
+      duracionMs,
+      pasoMs,
+      oncomplete: () => {
+        this.flag = !this.flag;
+        this.muevase();
+      }
+    });
+    this._tween.iniciar();
   }
   stop() {
-    this.servoDosis.fiveServo.removeListener("move:complete", this.bindedOnMoveComplete)
-
+    if (this._tween) {
+      this._tween.detener();
+      this._tween = null;
+    }
   }
   reset() {
     this.stop()
