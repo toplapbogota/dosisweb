@@ -295,29 +295,39 @@ class PorPasosEnBucle extends Strategy {
 class BucleConPausa extends Strategy {
   constructor(motor) {
     super(motor);
-    this.animation = new five.Animation(this.servoDosis.fiveServo);
+    this._tween = null;
     this.setTimeoutId = 0;
   }
 
   muevase(parametros) {
     console.log("parametros : ", parametros);
-    this.animation.enqueue({
-      duration: parametros.tiempoMov * 1000,
+    if (this._tween) {
+      this._tween.detener();
+      this._tween = null;
+    }
+    const fiveServo = this.servoDosis.fiveServo;
+    this._tween = new Tween({
+      fiveServo,
+      keyFrames: [parametros.start, parametros.final, parametros.start, parametros.final],
       cuePoints: [0, 0.3, 0.6, 1.0],
-      keyFrames: [{ degrees: parametros.start }, { degrees: parametros.final }, { degrees: parametros.start }, { degrees: parametros.final }],
+      duracionMs: (parametros.tiempoMov || 0) * 1000,
       oncomplete: () => {
         if (this.setTimeoutId === -1) return
         this.setTimeoutId = setTimeout(() => {
           if (this.setTimeoutId === -1) return
           this.muevase(parametros)
-        }, parametros.tiempoPausa * 1000);
+        }, (parametros.tiempoPausa || 0) * 1000);
       }
     });
+    this._tween.iniciar();
   }
   stop() {
     clearTimeout(this.setTimeoutId);
     this.setTimeoutId = -1;
-    this.animation.stop();
+    if (this._tween) {
+      this._tween.detener();
+      this._tween = null;
+    }
   }
 }
 
