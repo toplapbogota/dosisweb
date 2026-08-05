@@ -85,6 +85,65 @@ class Strategy {
   reset() { }
 }
 
+// fiveServo.to(grados, tiempo) delega en el Animation de johnny-five, que
+// para movimientos de menos de 5s usa el paquete "temporal" (ver
+// animation.js: "temporal can push CPU utilization to 100%") en vez de
+// setInterval. Ese busy-loop monopoliza el hilo de JS mientras dura el
+// movimiento: ninguna otra instrucción (otro servo, dcmotor, teclado, nuevo
+// código evaluado) puede correr hasta que termine. Tween reemplaza esa
+// animación por una interpolación propia con setInterval, que sí cede el
+// control al event loop entre cada paso, y escribe con fiveServo.to(angulo)
+// sin tiempo (la rama de escritura inmediata de johnny-five, sin Animation).
+class Tween {
+  constructor({ fiveServo, keyFrames, cuePoints, duracionMs, pasoMs = 30, metronomic = false, oncomplete }) {
+    this.fiveServo = fiveServo;
+    this.keyFrames = keyFrames;
+    this.cuePoints = cuePoints || keyFrames.map((_, i) => i / (keyFrames.length - 1));
+    this.duracionMs = duracionMs;
+    this.pasoMs = pasoMs;
+    this.metronomic = metronomic;
+    this.oncomplete = oncomplete;
+    this._intervalo = null;
+    this._inicioTiempo = 0;
+  }
+  iniciar() {
+    this.detener();
+    this._inicioTiempo = Date.now();
+    this._intervalo = setInterval(() => this._tick(), this.pasoMs);
+    this._tick();
+  }
+  _tick() {
+    const transcurrido = Date.now() - this._inicioTiempo;
+    const progreso = this.duracionMs > 0 ? Math.min(transcurrido / this.duracionMs, 1) : 1;
+    this.fiveServo.to(this._valorEn(progreso));
+    if (progreso >= 1) {
+      if (this.metronomic) {
+        this.keyFrames = [...this.keyFrames].reverse();
+        this._inicioTiempo = Date.now();
+      } else {
+        this.detener();
+        if (this.oncomplete) this.oncomplete();
+      }
+    }
+  }
+  _valorEn(progreso) {
+    let i = this.cuePoints.findIndex(c => c >= progreso);
+    if (i <= 0) i = 1;
+    const izq = this.cuePoints[i - 1];
+    const der = this.cuePoints[i];
+    const t = der > izq ? (progreso - izq) / (der - izq) : 1;
+    const valIzq = this.keyFrames[i - 1];
+    const valDer = this.keyFrames[i];
+    return valIzq + (valDer - valIzq) * t;
+  }
+  detener() {
+    if (this._intervalo) {
+      clearInterval(this._intervalo);
+      this._intervalo = null;
+    }
+  }
+}
+
 class Bucle extends Strategy {
   constructor(motor) {
     super(motor)
