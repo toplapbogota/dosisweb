@@ -150,7 +150,7 @@ class Bucle extends Strategy {
     this._tween = null;
     console.log('Bucle created')
   }
-  
+
   muevase(parametros) {
     console.log("parametros : Bucle", parametros);
     this.stop();
@@ -212,6 +212,7 @@ class IrRapido extends Strategy {
   }
 
   muevase(parametros) {
+    // Sin tiempo: escritura inmediata de johnny-five, no pasa por Animation.
     this.servoDosis.fiveServo.to(parametros.final)
   }
 }
