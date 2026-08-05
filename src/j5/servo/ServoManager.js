@@ -147,13 +147,30 @@ class Tween {
 class Bucle extends Strategy {
   constructor(motor) {
     super(motor)
+    this._tween = null;
     console.log('Bucle created')
   }
   
   muevase(parametros) {
-    console.trace();
     console.log("parametros : Bucle", parametros);
-    this.servoDosis.fiveServo.sweep()
+    this.stop();
+    const fiveServo = this.servoDosis.fiveServo;
+    const [desde, hasta] = fiveServo.range;
+    // Equivalente a sweep() de johnny-five (va y vuelve sin parar) pero
+    // con Tween en vez de Animation/temporal.
+    this._tween = new Tween({
+      fiveServo,
+      keyFrames: [desde, hasta],
+      duracionMs: 1000,
+      metronomic: true
+    });
+    this._tween.iniciar();
+  }
+  stop() {
+    if (this._tween) {
+      this._tween.detener();
+      this._tween = null;
+    }
   }
 }
 
