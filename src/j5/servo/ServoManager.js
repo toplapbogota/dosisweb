@@ -219,11 +219,33 @@ class IrRapido extends Strategy {
 class PorPasos extends Strategy {
   constructor(motor) {
     super(motor)
+    this._tween = null;
   }
 
   muevase(parametros) {
-    const time = parametros.tiempo * 1000;
-    this.servoDosis.fiveServo.to(parametros.final, time, parametros.pasos)
+    this.stop();
+    const fiveServo = this.servoDosis.fiveServo;
+    const final = parametros.final;
+    const duracionMs = (parametros.tiempo || 0) * 1000;
+
+    if (!duracionMs) {
+      fiveServo.to(final);
+      return;
+    }
+
+    const inicio = fiveServo.position >= 0 ? fiveServo.position : (parametros.start ?? final);
+    // parametros.pasos hacía antes de "rate" (fps) para fiveServo.to(); se
+    // conserva el mismo significado como frecuencia de la interpolación.
+    const pasoMs = parametros.pasos ? Math.max(10, Math.round(1000 / parametros.pasos)) : 30;
+    this._tween = new Tween({ fiveServo, keyFrames: [inicio, final], duracionMs, pasoMs });
+    this._tween.iniciar();
+  }
+
+  stop() {
+    if (this._tween) {
+      this._tween.detener();
+      this._tween = null;
+    }
   }
 }
 class PorPasosEnBucle extends Strategy {
