@@ -6,6 +6,9 @@ let keyboard;
 function teclado(configuracion) {
     console.log("configuracion : ", configuracion);
 
+    if (keyboard) {
+        keyboard.stop();
+    }
 
     keyboard = new KeyboardManager(configuracion);
 
@@ -16,7 +19,9 @@ function teclado(configuracion) {
 global.teclado = teclado
 
 function pararTeclado() {
-    keyboard.stop();
+    if (keyboard) {
+        keyboard.stop();
+    }
 }
 
 global.pararTeclado = pararTeclado

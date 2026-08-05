@@ -52,15 +52,29 @@ class Strategy {
 class Temporizador extends Strategy {
     constructor(keyboardManager) {
         super(keyboardManager)
+        // Un timer por tecla activa. El navegador dispara "keydown" repetidas
+        // veces mientras se mantiene la tecla presionada, y cada pulsación de
+        // una misma tecla debe reiniciar su propia ventana de tiempo en vez de
+        // apilar timeouts independientes: sin esto, un timeout viejo de una
+        // pulsación anterior puede apagar el pin justo después de reactivarlo.
+        this._timers = new Map();
         console.log('temporizador created')
     }
 
     manejarTecla(tiempo, event) {
         console.log('Tecla presionada:', event.key, tiempo);
-        if (this.esTeclaNumerica(event.key)) {
-            prender(event.key);
-            setTimeout(() => { apagar(event.key); }, tiempo);
+        if (!this.esTeclaNumerica(event.key)) return;
+        const key = event.key;
+        const timerExistente = this._timers.get(key);
+        if (timerExistente) {
+            clearTimeout(timerExistente);
+        } else {
+            prender(key);
         }
+        this._timers.set(key, setTimeout(() => {
+            this._timers.delete(key);
+            apagar(key);
+        }, tiempo));
     }
 
     prendase(parametros) {
@@ -75,6 +89,11 @@ class Temporizador extends Strategy {
     stop() {
         if (this.presionarTecla)
             document.removeEventListener('keydown', this.presionarTecla);
+        this._timers.forEach((id, key) => {
+            clearTimeout(id);
+            apagar(key);
+        });
+        this._timers.clear();
     }
 }
 
