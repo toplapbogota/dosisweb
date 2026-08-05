@@ -1,11 +1,9 @@
 import { Firmata } from 'firmata-io';
 import serialPort from '../serial/serialport'
 
-const initFirmata = (onIOReady, port) => {
+const initFirmata = (onIOReady) => {
   try {
-    // Si recibimos un puerto ya autorizado, lo asignamos antes de abrir; entonces el shim
-    // de avrgirl (parcheado) usa serialPort.port y se salta el selector.
-    if (port) serialPort.port = port;
+    
     serialPort.open(serialPortCallback);
     const io = new Firmata(serialPort, firmataCallback);
     // console.log('io: ', io);

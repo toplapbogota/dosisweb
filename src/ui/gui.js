@@ -4,28 +4,12 @@ import init from '../init.js';
 
 import ThemeController from '../editor/themes/themesController.js';
 import themesBackgroundColors from '../editor/themes/themesBackgroundsColors.js';
-import { getAuthorizedPort } from '../serial/serialport.js';
 
 const gui = new GUI();
 
 gui.add(window.location, 'reload').name('recargar');
 
-const initArduinoController = gui.add({ init }, 'init').name('iniciar');
-
-// Reconexión automática: si el navegador recuerda un puerto ya autorizado nos
-// conectamos solos al cargar y mostramos un indicador deshabilitado. Si no hay
-// ningún puerto autorizado ofrecemos el botón "iniciar" para que el usuario
-// elija la arduino por primera vez (lo que muestra el selector de Web Serial).
-const estadoArduino = { arduino: '' };
-
-getAuthorizedPort().then((port) => {
-  if (port) {
-    init(port);
-    estadoArduino.arduino = 'arduino detectado';
-    gui.add(estadoArduino, 'arduino').name('arduino').disable();
-    initArduinoController.destroy();
-  } 
-});
+gui.add({ init }, 'init').name('iniciar');
 
 export function setupThemeController(editor) {
   const themeController = new ThemeController(editor, gui);

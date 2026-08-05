@@ -1,8 +1,8 @@
 import handleIOReady from './j5/controlSystem';
 import handleStart from './serial/handleStart';
 
-function init(port){
-  handleStart(handleIOReady, port)
+function init(){
+  handleStart(handleIOReady)
 }
 
 export default init
