@@ -20,6 +20,7 @@ function handleIOReady(io) {
     board.on('ready', () => {
       console.log('johnny five in browser !!!!');
       document.getElementById('board-overlay')?.classList.add('board-ready');
+      window.dispatchEvent(new CustomEvent('arduino-ready'));
     });
     board.on('error', console.error);
   }
