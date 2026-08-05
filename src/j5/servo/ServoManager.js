@@ -37,7 +37,17 @@ class ServoManager {
     }
   }
   actualizar(opts) {
-    this.fiveServo.range = opts.range;
+    // opts.range llega como [start, final]: si el movimiento va hacia un
+    // ángulo menor (final < start) queda invertido, p.ej. [150, 30]. Servo.to()
+    // de johnny-five usa este range para acotar cada escritura con
+    // Fn.constrain(valor, range[0], range[1]) = min(range[1], max(range[0], valor)),
+    // que con un range invertido devuelve siempre range[1] sin importar el
+    // valor recibido. Eso hace que el servo salte de una vez al ángulo final
+    // en el primer tick del Tween en vez de moverse gradualmente. Se ordena
+    // ascendentemente para que el rango solo actúe como límite, nunca como
+    // filtro que colapsa el valor.
+    const [a, b] = opts.range;
+    this.fiveServo.range = a <= b ? [a, b] : [b, a];
     if (this.strategy) this.strategy.reset();
     this.elegirEstrategia(opts.estrategia);
   }
