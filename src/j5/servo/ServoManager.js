@@ -177,18 +177,33 @@ class Bucle extends Strategy {
 class Ir extends Strategy {
   constructor(motor) {
     super(motor)
+    this._tween = null;
     console.log('Ir created')
   }
 
   muevase(parametros) {
     console.log("parametros : Ir", parametros);
-    // console.log("this : ",this);
-    // console.log('Ir algorithm, this.fiveServo: ',this.fiveServo)
-    /*
-     Move a servo horn to specified position in degrees, 0-180 (or whatever the current valid range is). If ms is specified, the servo will take that amount of time to move to the position. If rate is specified, the angle change will be split into distance/rate steps for the ms option. If the specified angle is the same as the current angle, no commands are sent.
-     */   
-    const time = parametros.tiempo * 1000;
-    this.servoDosis.fiveServo.to(parametros.final, time);
+    this.stop();
+
+    const fiveServo = this.servoDosis.fiveServo;
+    const final = parametros.final;
+    const duracionMs = (parametros.tiempo || 0) * 1000;
+
+    if (!duracionMs) {
+      fiveServo.to(final);
+      return;
+    }
+
+    const inicio = fiveServo.position >= 0 ? fiveServo.position : (parametros.start ?? final);
+    this._tween = new Tween({ fiveServo, keyFrames: [inicio, final], duracionMs });
+    this._tween.iniciar();
+  }
+
+  stop() {
+    if (this._tween) {
+      this._tween.detener();
+      this._tween = null;
+    }
   }
 }
 class IrRapido extends Strategy {
