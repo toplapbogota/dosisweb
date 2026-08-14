@@ -154,6 +154,54 @@ class Tween {
   }
 }
 
+// Equivalente a sweep({range, interval, step}) de johnny-five, pero de un
+// solo tramo (no repite): ir de "inicio" a "final" en saltos discretos de
+// "tamanoPaso" grados, repartidos en partes iguales dentro de "duracionMs".
+// No confundir con el pasoMs de Tween (que es solo la frecuencia de refresco
+// de una interpolación continua): aquí "paso" es el propio concepto de la
+// app -tamaño del salto en grados-, y de él se deriva cuántos saltos hay y
+// cada cuánto tiempo ocurren, no al revés.
+class PasoAPaso {
+  constructor({ fiveServo, inicio, final, duracionMs, tamanoPaso = 1, oncomplete }) {
+    this.fiveServo = fiveServo;
+    this.inicio = inicio;
+    this.final = final;
+    this.duracionMs = duracionMs;
+    this.tamanoPaso = tamanoPaso > 0 ? tamanoPaso : 1;
+    this.oncomplete = oncomplete;
+    this._intervalo = null;
+  }
+  iniciar() {
+    this.detener();
+    const distancia = this.final - this.inicio;
+    if (!this.duracionMs || distancia === 0) {
+      this.fiveServo.to(this.final);
+      if (this.oncomplete) this.oncomplete();
+      return;
+    }
+    const totalPasos = Math.max(1, Math.round(Math.abs(distancia) / this.tamanoPaso));
+    const incrementoPorPaso = distancia / totalPasos;
+    const intervaloMs = this.duracionMs / totalPasos;
+    let pasoActual = 0;
+    this.fiveServo.to(this.inicio);
+    this._intervalo = setInterval(() => {
+      pasoActual++;
+      const esUltimo = pasoActual >= totalPasos;
+      this.fiveServo.to(esUltimo ? this.final : this.inicio + incrementoPorPaso * pasoActual);
+      if (esUltimo) {
+        this.detener();
+        if (this.oncomplete) this.oncomplete();
+      }
+    }, intervaloMs);
+  }
+  detener() {
+    if (this._intervalo) {
+      clearInterval(this._intervalo);
+      this._intervalo = null;
+    }
+  }
+}
+
 class Bucle extends Strategy {
   constructor(motor) {
     super(motor)
@@ -204,7 +252,12 @@ class Ir extends Strategy {
       return;
     }
 
-    const inicio = fiveServo.position >= 0 ? fiveServo.position : (parametros.start ?? final);
+    // parametros.start es la intención explícita del usuario de dónde debe
+    // arrancar el movimiento; tiene prioridad sobre la posición real del
+    // servo. Si se usa fiveServo.position primero y el servo ya está en
+    // "final" por un comando anterior, el tween queda con rango [final,final]
+    // (cero recorrido) e ignora el "start" pedido, sin generar movimiento.
+    const inicio = parametros.start ?? (fiveServo.position >= 0 ? fiveServo.position : final);
     this._tween = new Tween({ fiveServo, keyFrames: [inicio, final], duracionMs });
     this._tween.iniciar();
   }
@@ -230,32 +283,32 @@ class IrRapido extends Strategy {
 class PorPasos extends Strategy {
   constructor(motor) {
     super(motor)
-    this._tween = null;
+    this._paso = null;
   }
 
   muevase(parametros) {
     this.stop();
     const fiveServo = this.servoDosis.fiveServo;
     const final = parametros.final;
-    const duracionMs = (parametros.tiempo || 0) * 1000;
+    // parametros.start es la intención explícita del usuario de dónde debe
+    // arrancar el movimiento; tiene prioridad sobre la posición real del
+    // servo (ver Ir, mismo caso).
+    const inicio = parametros.start ?? (fiveServo.position >= 0 ? fiveServo.position : final);
 
-    if (!duracionMs) {
-      fiveServo.to(final);
-      return;
-    }
-
-    const inicio = fiveServo.position >= 0 ? fiveServo.position : (parametros.start ?? final);
-    // parametros.pasos hacía antes de "rate" (fps) para fiveServo.to(); se
-    // conserva el mismo significado como frecuencia de la interpolación.
-    const pasoMs = parametros.pasos ? Math.max(10, Math.round(1000 / parametros.pasos)) : 30;
-    this._tween = new Tween({ fiveServo, keyFrames: [inicio, final], duracionMs, pasoMs });
-    this._tween.iniciar();
+    this._paso = new PasoAPaso({
+      fiveServo,
+      inicio,
+      final,
+      duracionMs: (parametros.tiempo || 0) * 1000,
+      tamanoPaso: parametros.pasos
+    });
+    this._paso.iniciar();
   }
 
   stop() {
-    if (this._tween) {
-      this._tween.detener();
-      this._tween = null;
+    if (this._paso) {
+      this._paso.detener();
+      this._paso = null;
     }
   }
 }
@@ -263,7 +316,7 @@ class PorPasosEnBucle extends Strategy {
   constructor(motor) {
     super(motor)
     this.flag = true;
-    this._tween = null;
+    this._paso = null;
   }
 
   muevase(parametros) {
@@ -277,26 +330,30 @@ class PorPasosEnBucle extends Strategy {
     const fiveServo = this.servoDosis.fiveServo;
     const { start, final, tiempo, pasos } = parametros;
     const objetivo = this.flag ? final : start;
-    const duracionMs = (tiempo || 0) * 1000;
-    const inicio = fiveServo.position >= 0 ? fiveServo.position : (this.flag ? start : final);
-    const pasoMs = pasos ? Math.max(10, Math.round(1000 / pasos)) : 30;
+    // El extremo de salida es siempre el opuesto al objetivo (start/final
+    // alternan en cada vuelta) - no hace falta ni conviene usar
+    // fiveServo.position aquí: si por un comando anterior el servo ya
+    // estuviera en el mismo ángulo que "objetivo", tomar la posición real
+    // dejaría el recorrido en cero e ignoraría start/final.
+    const inicio = this.flag ? start : final;
 
-    this._tween = new Tween({
+    this._paso = new PasoAPaso({
       fiveServo,
-      keyFrames: [inicio, objetivo],
-      duracionMs,
-      pasoMs,
+      inicio,
+      final: objetivo,
+      duracionMs: (tiempo || 0) * 1000,
+      tamanoPaso: pasos,
       oncomplete: () => {
         this.flag = !this.flag;
         this.muevase();
       }
     });
-    this._tween.iniciar();
+    this._paso.iniciar();
   }
   stop() {
-    if (this._tween) {
-      this._tween.detener();
-      this._tween = null;
+    if (this._paso) {
+      this._paso.detener();
+      this._paso = null;
     }
   }
   reset() {
