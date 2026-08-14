@@ -37,7 +37,17 @@ class ServoManager {
     }
   }
   actualizar(opts) {
-    this.fiveServo.range = opts.range;
+    // opts.range llega como [start, final]: si el movimiento va hacia un
+    // ángulo menor (final < start) queda invertido, p.ej. [150, 30]. Servo.to()
+    // de johnny-five usa este range para acotar cada escritura con
+    // Fn.constrain(valor, range[0], range[1]) = min(range[1], max(range[0], valor)),
+    // que con un range invertido devuelve siempre range[1] sin importar el
+    // valor recibido. Eso hace que el servo salte de una vez al ángulo final
+    // en el primer tick del Tween en vez de moverse gradualmente. Se ordena
+    // ascendentemente para que el rango solo actúe como límite, nunca como
+    // filtro que colapsa el valor.
+    const [a, b] = opts.range;
+    this.fiveServo.range = a <= b ? [a, b] : [b, a];
     if (this.strategy) this.strategy.reset();
     this.elegirEstrategia(opts.estrategia);
   }
@@ -85,34 +95,178 @@ class Strategy {
   reset() { }
 }
 
+// fiveServo.to(grados, tiempo) delega en el Animation de johnny-five, que
+// para movimientos de menos de 5s usa el paquete "temporal" (ver
+// animation.js: "temporal can push CPU utilization to 100%") en vez de
+// setInterval. Ese busy-loop monopoliza el hilo de JS mientras dura el
+// movimiento: ninguna otra instrucción (otro servo, dcmotor, teclado, nuevo
+// código evaluado) puede correr hasta que termine. Tween reemplaza esa
+// animación por una interpolación propia con setInterval, que sí cede el
+// control al event loop entre cada paso, y escribe con fiveServo.to(angulo)
+// sin tiempo (la rama de escritura inmediata de johnny-five, sin Animation).
+class Tween {
+  constructor({ fiveServo, keyFrames, cuePoints, duracionMs, pasoMs = 30, metronomic = false, oncomplete }) {
+    this.fiveServo = fiveServo;
+    this.keyFrames = keyFrames;
+    this.cuePoints = cuePoints || keyFrames.map((_, i) => i / (keyFrames.length - 1));
+    this.duracionMs = duracionMs;
+    this.pasoMs = pasoMs;
+    this.metronomic = metronomic;
+    this.oncomplete = oncomplete;
+    this._intervalo = null;
+    this._inicioTiempo = 0;
+  }
+  iniciar() {
+    this.detener();
+    this._inicioTiempo = Date.now();
+    this._intervalo = setInterval(() => this._tick(), this.pasoMs);
+    this._tick();
+  }
+  _tick() {
+    const transcurrido = Date.now() - this._inicioTiempo;
+    const progreso = this.duracionMs > 0 ? Math.min(transcurrido / this.duracionMs, 1) : 1;
+    this.fiveServo.to(this._valorEn(progreso));
+    if (progreso >= 1) {
+      if (this.metronomic) {
+        this.keyFrames = [...this.keyFrames].reverse();
+        this._inicioTiempo = Date.now();
+      } else {
+        this.detener();
+        if (this.oncomplete) this.oncomplete();
+      }
+    }
+  }
+  _valorEn(progreso) {
+    let i = this.cuePoints.findIndex(c => c >= progreso);
+    if (i <= 0) i = 1;
+    const izq = this.cuePoints[i - 1];
+    const der = this.cuePoints[i];
+    const t = der > izq ? (progreso - izq) / (der - izq) : 1;
+    const valIzq = this.keyFrames[i - 1];
+    const valDer = this.keyFrames[i];
+    return valIzq + (valDer - valIzq) * t;
+  }
+  detener() {
+    if (this._intervalo) {
+      clearInterval(this._intervalo);
+      this._intervalo = null;
+    }
+  }
+}
+
+// Equivalente a sweep({range, interval, step}) de johnny-five, pero de un
+// solo tramo (no repite): ir de "inicio" a "final" en saltos discretos de
+// "tamanoPaso" grados, repartidos en partes iguales dentro de "duracionMs".
+// No confundir con el pasoMs de Tween (que es solo la frecuencia de refresco
+// de una interpolación continua): aquí "paso" es el propio concepto de la
+// app -tamaño del salto en grados-, y de él se deriva cuántos saltos hay y
+// cada cuánto tiempo ocurren, no al revés.
+class PasoAPaso {
+  constructor({ fiveServo, inicio, final, duracionMs, tamanoPaso = 1, oncomplete }) {
+    this.fiveServo = fiveServo;
+    this.inicio = inicio;
+    this.final = final;
+    this.duracionMs = duracionMs;
+    this.tamanoPaso = tamanoPaso > 0 ? tamanoPaso : 1;
+    this.oncomplete = oncomplete;
+    this._intervalo = null;
+  }
+  iniciar() {
+    this.detener();
+    const distancia = this.final - this.inicio;
+    if (!this.duracionMs || distancia === 0) {
+      this.fiveServo.to(this.final);
+      if (this.oncomplete) this.oncomplete();
+      return;
+    }
+    const totalPasos = Math.max(1, Math.round(Math.abs(distancia) / this.tamanoPaso));
+    const incrementoPorPaso = distancia / totalPasos;
+    const intervaloMs = this.duracionMs / totalPasos;
+    let pasoActual = 0;
+    this.fiveServo.to(this.inicio);
+    this._intervalo = setInterval(() => {
+      pasoActual++;
+      const esUltimo = pasoActual >= totalPasos;
+      this.fiveServo.to(esUltimo ? this.final : this.inicio + incrementoPorPaso * pasoActual);
+      if (esUltimo) {
+        this.detener();
+        if (this.oncomplete) this.oncomplete();
+      }
+    }, intervaloMs);
+  }
+  detener() {
+    if (this._intervalo) {
+      clearInterval(this._intervalo);
+      this._intervalo = null;
+    }
+  }
+}
+
 class Bucle extends Strategy {
   constructor(motor) {
     super(motor)
+    this._tween = null;
     console.log('Bucle created')
   }
-  
+
   muevase(parametros) {
-    console.trace();
     console.log("parametros : Bucle", parametros);
-    this.servoDosis.fiveServo.sweep()
+    this.stop();
+    const fiveServo = this.servoDosis.fiveServo;
+    const [desde, hasta] = fiveServo.range;
+    // Equivalente a sweep() de johnny-five (va y vuelve sin parar) pero
+    // con Tween en vez de Animation/temporal.
+    this._tween = new Tween({
+      fiveServo,
+      keyFrames: [desde, hasta],
+      duracionMs: 1000,
+      metronomic: true
+    });
+    this._tween.iniciar();
+  }
+  stop() {
+    if (this._tween) {
+      this._tween.detener();
+      this._tween = null;
+    }
   }
 }
 
 class Ir extends Strategy {
   constructor(motor) {
     super(motor)
+    this._tween = null;
     console.log('Ir created')
   }
 
   muevase(parametros) {
     console.log("parametros : Ir", parametros);
-    // console.log("this : ",this);
-    // console.log('Ir algorithm, this.fiveServo: ',this.fiveServo)
-    /*
-     Move a servo horn to specified position in degrees, 0-180 (or whatever the current valid range is). If ms is specified, the servo will take that amount of time to move to the position. If rate is specified, the angle change will be split into distance/rate steps for the ms option. If the specified angle is the same as the current angle, no commands are sent.
-     */   
-    const time = parametros.tiempo * 1000;
-    this.servoDosis.fiveServo.to(parametros.final, time);
+    this.stop();
+
+    const fiveServo = this.servoDosis.fiveServo;
+    const final = parametros.final;
+    const duracionMs = (parametros.tiempo || 0) * 1000;
+
+    if (!duracionMs) {
+      fiveServo.to(final);
+      return;
+    }
+
+    // parametros.start es la intención explícita del usuario de dónde debe
+    // arrancar el movimiento; tiene prioridad sobre la posición real del
+    // servo. Si se usa fiveServo.position primero y el servo ya está en
+    // "final" por un comando anterior, el tween queda con rango [final,final]
+    // (cero recorrido) e ignora el "start" pedido, sin generar movimiento.
+    const inicio = parametros.start ?? (fiveServo.position >= 0 ? fiveServo.position : final);
+    this._tween = new Tween({ fiveServo, keyFrames: [inicio, final], duracionMs });
+    this._tween.iniciar();
+  }
+
+  stop() {
+    if (this._tween) {
+      this._tween.detener();
+      this._tween = null;
+    }
   }
 }
 class IrRapido extends Strategy {
@@ -121,6 +275,7 @@ class IrRapido extends Strategy {
   }
 
   muevase(parametros) {
+    // Sin tiempo: escritura inmediata de johnny-five, no pasa por Animation.
     this.servoDosis.fiveServo.to(parametros.final)
   }
 }
@@ -128,23 +283,40 @@ class IrRapido extends Strategy {
 class PorPasos extends Strategy {
   constructor(motor) {
     super(motor)
+    this._paso = null;
   }
 
   muevase(parametros) {
-    const time = parametros.tiempo * 1000;
-    this.servoDosis.fiveServo.to(parametros.final, time, parametros.pasos)
+    this.stop();
+    const fiveServo = this.servoDosis.fiveServo;
+    const final = parametros.final;
+    // parametros.start es la intención explícita del usuario de dónde debe
+    // arrancar el movimiento; tiene prioridad sobre la posición real del
+    // servo (ver Ir, mismo caso).
+    const inicio = parametros.start ?? (fiveServo.position >= 0 ? fiveServo.position : final);
+
+    this._paso = new PasoAPaso({
+      fiveServo,
+      inicio,
+      final,
+      duracionMs: (parametros.tiempo || 0) * 1000,
+      tamanoPaso: parametros.pasos
+    });
+    this._paso.iniciar();
+  }
+
+  stop() {
+    if (this._paso) {
+      this._paso.detener();
+      this._paso = null;
+    }
   }
 }
 class PorPasosEnBucle extends Strategy {
   constructor(motor) {
     super(motor)
     this.flag = true;
-    this.bindedOnMoveComplete = this.onMoveComplete.bind(this)
-    this.servoDosis.fiveServo.on("move:complete", this.bindedOnMoveComplete)
-  }
-  onMoveComplete() {
-    this.flag = !this.flag;
-    this.muevase();
+    this._paso = null;
   }
 
   muevase(parametros) {
@@ -153,15 +325,36 @@ class PorPasosEnBucle extends Strategy {
     } else {
       parametros = this.parametros;
     }
-    if (this.flag) {
-      this.servoDosis.fiveServo.to(parametros.final, parametros.tiempo * 1000, parametros.pasos);
-    } else {
-      this.servoDosis.fiveServo.to(parametros.start, parametros.tiempo * 1000, parametros.pasos)
-    }
+    this.stop();
+
+    const fiveServo = this.servoDosis.fiveServo;
+    const { start, final, tiempo, pasos } = parametros;
+    const objetivo = this.flag ? final : start;
+    // El extremo de salida es siempre el opuesto al objetivo (start/final
+    // alternan en cada vuelta) - no hace falta ni conviene usar
+    // fiveServo.position aquí: si por un comando anterior el servo ya
+    // estuviera en el mismo ángulo que "objetivo", tomar la posición real
+    // dejaría el recorrido en cero e ignoraría start/final.
+    const inicio = this.flag ? start : final;
+
+    this._paso = new PasoAPaso({
+      fiveServo,
+      inicio,
+      final: objetivo,
+      duracionMs: (tiempo || 0) * 1000,
+      tamanoPaso: pasos,
+      oncomplete: () => {
+        this.flag = !this.flag;
+        this.muevase();
+      }
+    });
+    this._paso.iniciar();
   }
   stop() {
-    this.servoDosis.fiveServo.removeListener("move:complete", this.bindedOnMoveComplete)
-
+    if (this._paso) {
+      this._paso.detener();
+      this._paso = null;
+    }
   }
   reset() {
     this.stop()
@@ -170,29 +363,39 @@ class PorPasosEnBucle extends Strategy {
 class BucleConPausa extends Strategy {
   constructor(motor) {
     super(motor);
-    this.animation = new five.Animation(this.servoDosis.fiveServo);
+    this._tween = null;
     this.setTimeoutId = 0;
   }
 
   muevase(parametros) {
     console.log("parametros : ", parametros);
-    this.animation.enqueue({
-      duration: parametros.tiempoMov * 1000,
+    if (this._tween) {
+      this._tween.detener();
+      this._tween = null;
+    }
+    const fiveServo = this.servoDosis.fiveServo;
+    this._tween = new Tween({
+      fiveServo,
+      keyFrames: [parametros.start, parametros.final, parametros.start, parametros.final],
       cuePoints: [0, 0.3, 0.6, 1.0],
-      keyFrames: [{ degrees: parametros.start }, { degrees: parametros.final }, { degrees: parametros.start }, { degrees: parametros.final }],
+      duracionMs: (parametros.tiempoMov || 0) * 1000,
       oncomplete: () => {
         if (this.setTimeoutId === -1) return
         this.setTimeoutId = setTimeout(() => {
           if (this.setTimeoutId === -1) return
           this.muevase(parametros)
-        }, parametros.tiempoPausa * 1000);
+        }, (parametros.tiempoPausa || 0) * 1000);
       }
     });
+    this._tween.iniciar();
   }
   stop() {
     clearTimeout(this.setTimeoutId);
     this.setTimeoutId = -1;
-    this.animation.stop();
+    if (this._tween) {
+      this._tween.detener();
+      this._tween = null;
+    }
   }
 }
 
