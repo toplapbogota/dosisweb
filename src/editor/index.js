@@ -34,6 +34,10 @@ export default class Editor extends EventEmitter {
         let text = this.selectCurrentBlock(cm);
         this.localStorageSave(cm)
         this.emit('eval', text)
+      },
+      'Alt-Enter': (cm) => {
+        this.localStorageSave(cm)
+        this.emit('eval', cm.doc.getValue());
       }
     }
   }
