@@ -21,6 +21,9 @@ export default class Editor extends EventEmitter {
 
     this.cm.setValue('\n \n console.log("Dosis Web - Live Coding & Harware Hacking") \n\n toplap Bogotá ::  CTRL+enter')
 
+    this.isVisible = true;
+    this.domElement = this.cm.getWrapperElement();
+
   }
   extraKeys() {
     self = this
@@ -34,6 +37,16 @@ export default class Editor extends EventEmitter {
         let text = this.selectCurrentBlock(cm);
         this.localStorageSave(cm)
         this.emit('eval', text)
+      },
+      'Shift-Ctrl-H': (cm)=>{
+        if(this.isVisible){
+          this.domElement.style.opacity = '0'
+          this.isVisible = false
+        }else{
+          this.domElement.style.opacity = '1'
+          this.isVisible = true
+        }
+        this.emit('hide-all',this.isVisible)
       }
     }
   }
