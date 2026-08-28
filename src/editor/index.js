@@ -21,6 +21,9 @@ export default class Editor extends EventEmitter {
 
     this.cm.setValue('\n \n console.log("Dosis Web - Live Coding & Harware Hacking") \n\n toplap Bogotá ::  CTRL+enter')
 
+    this.isVisible = true;
+    this.domElement = this.cm.getWrapperElement();
+
   }
   extraKeys() {
     self = this
