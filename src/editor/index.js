@@ -1,5 +1,6 @@
 import CodeMirror from 'codemirror-minified/lib/codemirror'
 import 'codemirror-minified/mode/javascript/javascript'
+import 'codemirror-minified/addon/comment/comment'
 import EventEmitter from 'events'
 import { appStorage } from '../storage/appStorage'
 
@@ -34,6 +35,9 @@ export default class Editor extends EventEmitter {
         let text = this.selectCurrentBlock(cm);
         this.localStorageSave(cm)
         this.emit('eval', text)
+      },
+      'Ctrl-/': (cm) => {
+        this.cm.toggleComment();
       }
     }
   }
