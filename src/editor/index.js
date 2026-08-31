@@ -1,5 +1,6 @@
 import CodeMirror from 'codemirror-minified/lib/codemirror'
 import 'codemirror-minified/mode/javascript/javascript'
+import 'codemirror-minified/addon/comment/comment'
 import EventEmitter from 'events'
 import { appStorage } from '../storage/appStorage'
 
