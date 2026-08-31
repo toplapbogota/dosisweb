@@ -35,6 +35,9 @@ export default class Editor extends EventEmitter {
         let text = this.selectCurrentBlock(cm);
         this.localStorageSave(cm)
         this.emit('eval', text)
+      },
+      'Ctrl-/': (cm) => {
+        this.cm.toggleComment();
       }
     }
   }
