@@ -59,7 +59,8 @@ class StepperManger {
             id: 'stepper-dosis',
             pins,
             stepsPerRev,
-            type
+            type,
+            board: args.board
         })
         console.log('type: ===========', type);
 

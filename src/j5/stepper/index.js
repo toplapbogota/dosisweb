@@ -1,9 +1,12 @@
 import StepperManager from "./StepperManager";
+import { getBoard } from "../boards";
 
-let stepperMotor;
-let sm;
+const steppersByBoard = new WeakMap();
+
 function stepper(configuracion){
     console.log("configuracion 1 : ",configuracion);
+    const board = getBoard(configuracion.board);
+    let stepperMotor = steppersByBoard.get(board);
 
     const ejecutar = () => {
         stepperMotor.actualizar(configuracion);
@@ -11,8 +14,8 @@ function stepper(configuracion){
     };
 
     if(!stepperMotor){
-        stepperMotor = new StepperManager(configuracion);
-        sm = stepperMotor.fiveStepper;
+        stepperMotor = new StepperManager({ ...configuracion, board });
+        steppersByBoard.set(board, stepperMotor);
         ejecutar();
     }else{
         stepperMotor.stop();
@@ -22,7 +25,8 @@ function stepper(configuracion){
     }
 }
 
-function detenerPAP() {
+function detenerPAP(boardId) {
+  const stepperMotor = steppersByBoard.get(getBoard(boardId));
   if(stepperMotor){
     stepperMotor.stop();
   }
