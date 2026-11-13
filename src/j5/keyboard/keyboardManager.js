@@ -1,8 +1,10 @@
+import { prenderEn, apagarEn } from "../pins";
+
 class KeyboardManager {
 
-    constructor(opts) {
+    constructor(opts, board) {
         console.log("opts : ", opts);
-
+        this.board = board;
 
     }
     elegirEstrategia(type) {
@@ -69,11 +71,11 @@ class Temporizador extends Strategy {
         if (timerExistente) {
             clearTimeout(timerExistente);
         } else {
-            prender(key);
+            prenderEn(this.keyboardManager.board, key);
         }
         this._timers.set(key, setTimeout(() => {
             this._timers.delete(key);
-            apagar(key);
+            apagarEn(this.keyboardManager.board, key);
         }, tiempo));
     }
 
@@ -91,7 +93,7 @@ class Temporizador extends Strategy {
             document.removeEventListener('keydown', this.presionarTecla);
         this._timers.forEach((id, key) => {
             clearTimeout(id);
-            apagar(key);
+            apagarEn(this.keyboardManager.board, key);
         });
         this._timers.clear();
     }
@@ -116,14 +118,14 @@ class Presionado extends Strategy {
         this.presionarTecla = (event) => {
             if (this.esTeclaNumerica(event.key) && !this.teclasActivas.has(event.key)) {
                 this.teclasActivas.add(event.key);
-                prender(event.key);
+                prenderEn(this.keyboardManager.board, event.key);
             }
         };
 
         this.soltarTecla = (event) => {
             if (this.esTeclaNumerica(event.key) && this.teclasActivas.has(event.key)) {
                 this.teclasActivas.delete(event.key);
-                apagar(event.key);
+                apagarEn(this.keyboardManager.board, event.key);
             }
         };
 
@@ -138,7 +140,7 @@ class Presionado extends Strategy {
     stop() {
         if (this.presionarTecla) document.removeEventListener('keydown', this.presionarTecla);
         if (this.soltarTecla) document.removeEventListener('keyup', this.soltarTecla);
-        this.teclasActivas.forEach(key => apagar(key));
+        this.teclasActivas.forEach(key => apagarEn(this.keyboardManager.board, key));
         this.teclasActivas.clear();
     }
 
