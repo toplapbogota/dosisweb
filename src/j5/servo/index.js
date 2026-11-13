@@ -1,9 +1,21 @@
 import ServoManager from "./ServoManager";
+import { getBoard } from "../boards";
 
-const servos = [];
-const pines_servos = [];
+const servosByBoard = new WeakMap();
+
+function getServos(board) {
+  let servos = servosByBoard.get(board);
+  if (!servos) {
+    servos = new Map();
+    servosByBoard.set(board, servos);
+  }
+  return servos;
+}
+
 function servo(configuracion) {
   console.log("configuracion : ", configuracion);
+  const board = getBoard(configuracion.board);
+  const servos = getServos(board);
   let pin = configuracion.pin;
   let start = configuracion.start;
   let final = configuracion.final;
@@ -11,16 +23,16 @@ function servo(configuracion) {
   let estrategia = configuracion.estado;
   console.log("estrategia : ", estrategia);
   console.log("pin : ", pin);
-  let servoMotor = servos[pin];
+  let servoMotor = servos.get(pin);
   let range = [start, final];
   if (!servoMotor) {
-    pines_servos.push(pin);
     servoMotor = new ServoManager({
       pin,
       range,
-      tiempo
+      tiempo,
+      board
     });
-    servos[pin] = servoMotor;
+    servos.set(pin, servoMotor);
   } else {
     console.log('stopping servo');
     servoMotor.stop();
@@ -30,9 +42,10 @@ function servo(configuracion) {
 }
 global.servo = servo
 
-function apagarServos() {
-  for (let pin in servos) {
-    servos[pin].stop();
+function apagarServos(boardId) {
+  const servos = getServos(getBoard(boardId));
+  for (const servoMotor of servos.values()) {
+    servoMotor.stop();
   }
 }
 
