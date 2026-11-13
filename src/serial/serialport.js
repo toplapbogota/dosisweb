@@ -7,6 +7,8 @@ const serialPortCallback = (serialError) => {
   }
 }
 
-const serialPort = new SerialPort(null, { autoOpen: false, callback: serialPortCallback });
+function createSerialPort() {
+  return new SerialPort(null, { autoOpen: false, callback: serialPortCallback });
+}
 
-export default serialPort
+export default createSerialPort

@@ -1,9 +1,10 @@
 import { Firmata } from 'firmata-io';
-import serialPort from '../serial/serialport'
+import createSerialPort from '../serial/serialport'
 
 const initFirmata = (onIOReady) => {
   try {
     
+    const serialPort = createSerialPort();
     serialPort.open(serialPortCallback);
     const io = new Firmata(serialPort, firmataCallback);
     // console.log('io: ', io);
