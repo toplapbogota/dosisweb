@@ -1,7 +1,7 @@
 class MotorManager {
     constructor(opt)   {
     console.log("opts : ", opt);
-    this.fiveMotor = new Motor([opt.pin1, opt.pin2, opt.pin3]);
+    this.fiveMotor = new Motor({ pins: [opt.pin1, opt.pin2, opt.pin3], board: opt.board });
     }
     elegirEstrategia(type) {
         console.log("type : ", type);
