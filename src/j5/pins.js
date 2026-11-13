@@ -1,166 +1,153 @@
-import { pinsManager, checkPins } from "./pins/pinsManager";
+import { getPinsManager, checkPins } from "./pins/pinsManager";
 
-const pines = [];
-let contadorIndice = 0;
-let pines_global;
-let intervalo = 1000;
-let bucleID = -1;
-let bucleIds = [];
+const statesByPinsManager = new WeakMap();
 
+function getState(pinsManager) {
+  let state = statesByPinsManager.get(pinsManager);
+  if (!state) {
+    state = {
+      contadorIndice: 0,
+      pines_global: undefined,
+      intervalo: 1000,
+      bucleID: -1,
+      bucleIds: [],
+      pinesParalelo: undefined
+    };
+    statesByPinsManager.set(pinsManager, state);
+  }
+  return state;
+}
+
+function prenderEn(board, ...pinesID) {
+  const pinsManager = getPinsManager(board);
+  checkPins(pinesID, 'prender', board);
+  for (const pinId of pinesID) {
+    pinsManager.getPinById(pinId).high();
+  }
+}
 
 function prender(...pinesID) {
-  checkPins(pinesID, 'prender');
-  console.log("pines : ", pinesID);
+  prenderEn(undefined, ...pinesID);
+}
+global.prender = prender;
+global.encender = prender;
 
-  for (let i = 0; i < pinesID.length; i++) {
-    console.log(i);
-    pinsManager.getPinById(pinesID[i]).high();
-    // pines[pinesID[i]].high();
+function apagarEn(board, ...pinesID) {
+  const pinsManager = getPinsManager(board);
+  checkPins(pinesID, 'apagar', board);
+  for (const pinId of pinesID) {
+    pinsManager.getPinById(pinId).low();
   }
 }
-global.prender = prender
-global.encender = prender
 
 function apagar(...pinesID) {
-  checkPins(pinesID, 'prender');
-  console.log("pines : ", pinesID);
-
-  for (let i = 0; i < pinesID.length; i++) {
-    console.log(i);
-    pinsManager.getPinById(pinesID[i]).low();
-  }
+  apagarEn(undefined, ...pinesID);
 }
-
-global.apagar = apagar
+global.apagar = apagar;
 
 function serie(...pinesID) {
-  checkPins(pinesID, 'bucleArduino');
-  // let pines = pinsManager.j5Pins
-  bucleID = setInterval(() => { doBuclePins(pinesID, true) }, intervalo);
-  bucleIds.push(bucleID);
+  const pinsManager = getPinsManager();
+  const state = getState(pinsManager);
+  checkPins(pinesID, 'bucleArduino', pinsManager.board);
+  let intervalId;
+  intervalId = setInterval(() => {
+    doBuclePins(pinesID, pinsManager, state, () => clearInterval(intervalId));
+  }, state.intervalo);
+  state.bucleID = intervalId;
+  state.bucleIds.push(state.bucleID);
 }
-
 global.serie = serie;
 
 function cambiarIntervalo(argument) {
-  intervalo = argument;
-  clearInterval(bucleID);
-  bucle();
+  const pinsManager = getPinsManager();
+  const state = getState(pinsManager);
+  state.intervalo = argument;
+  clearInterval(state.bucleID);
+  if (state.pines_global) {
+    startBucle(pinsManager, state, state.pines_global);
+  }
 }
-
 global.cambiarIntervalo = cambiarIntervalo;
 
 function bucle(...pinesID) {
-  checkPins(pinesID, 'bucleArduino');
-  // let pines = pinsManager.j5Pins
+  const pinsManager = getPinsManager();
+  const state = getState(pinsManager);
   if (pinesID.length !== 0) {
-    pines_global = pinesID;
+    state.pines_global = pinesID;
+  } else {
+    pinesID = state.pines_global;
   }
-  else {
-    pinesID = pines_global;
-  }
-
-
-  bucleID = setInterval(() => { doBuclePins(pinesID) }, intervalo)
-  bucleIds.push(bucleID);
+  startBucle(pinsManager, state, pinesID);
 }
 
-global.bucle = bucle
+function startBucle(pinsManager, state, pinesID) {
+  checkPins(pinesID, 'bucleArduino', pinsManager.board);
+  state.bucleID = setInterval(() => doBuclePins(pinesID, pinsManager, state), state.intervalo);
+  state.bucleIds.push(state.bucleID);
+}
+global.bucle = bucle;
 
 function detenerBucle() {
-  clearInterval(bucleID)
+  const state = getState(getPinsManager());
+  clearInterval(state.bucleID);
 }
-
-global.detenerBucle = detenerBucle
+global.detenerBucle = detenerBucle;
 
 function apagarTodo() {
-  const pins = pinsManager.pins;
-  console.log('apagarTodo : ', pins);
+  const pinsManager = getPinsManager();
+  const state = getState(pinsManager);
   pinsManager.stopAll();
-  clearInterval(bucleID)
-  bucleID = null;
-  bucleIds.forEach(x => {
-    clearInterval(x)
-
-  })
-  // apagarServos();
-  apagarPinesParalelo();
+  state.bucleIds.forEach(id => clearInterval(id));
+  state.bucleID = null;
+  apagarPinesParalelo(state);
 }
+global.apagarTodo = apagarTodo;
 
-function apagarPinesParalelo() {
-  if (pinesParalelo) {
-    pinesParalelo.forEach(function (pin_object) {
-      clearTimeout(pin_object.init_id)
-      clearTimeout(pin_object.stop_id)
-    })
-    pinesParalelo.length = 0;
+function apagarPinesParalelo(state) {
+  if (state.pinesParalelo) {
+    state.pinesParalelo.forEach((pin_object) => {
+      clearTimeout(pin_object.init_id);
+      clearTimeout(pin_object.stop_id);
+    });
+    state.pinesParalelo.length = 0;
   }
 }
 
-global.apagarTodo = apagarTodo
-
-let pinesParalelo;
-/**
- * 
- * @param  {...any} pinesData a list of {pin,inicio,lapso} objects
- */
 function paralelo(...pinesData) {
-  apagarPinesParalelo();
-  //console.log("PinesData : ",PinesData);
-  var pinesIds = pinesData.map(pinDatum => pinDatum.pin);
-  let fivePins = checkPins(pinesIds, 'sameTime');
-  // return;
-  pinesParalelo = pinesData;
-  for (var i = 0; i < pinesData.length; i++) {
-    let pinId = pinesData[i].pin;
+  const pinsManager = getPinsManager();
+  const state = getState(pinsManager);
+  apagarPinesParalelo(state);
+  const pinesIds = pinesData.map(pinDatum => pinDatum.pin);
+  checkPins(pinesIds, 'sameTime', pinsManager.board);
+  state.pinesParalelo = pinesData;
+  for (let i = 0; i < pinesData.length; i++) {
     pinesData[i].id = i;
-    pinesData[i].fivePin = pinsManager.getPinById(pinId);
+    pinesData[i].fivePin = pinsManager.getPinById(pinesData[i].pin);
     pinesData[i].ciclo = function () {
       this.init_id = setTimeout(() => {
-        console.log('inicio', this.pin);
         this.fivePin.high();
         this.stop_id = setTimeout(() => {
-          console.log('stop', this.pin);
           this.fivePin.low();
-          pinesParalelo[this.id].ciclo();
-        },
-          this.lapso * 1000)
-      }, this.inicio * 1000)
-    }
+          state.pinesParalelo[this.id].ciclo();
+        }, this.lapso * 1000);
+      }, this.inicio * 1000);
+    };
     pinesData[i].ciclo();
-
   }
-
 }
+global.paralelo = paralelo;
 
-global.paralelo = paralelo
-
-
-function doBuclePins(pinesID, isOnce = false) {
-
-  console.log('-------------------------------')
-  let currentId = pinesID[contadorIndice];
-  let previousId;
-  let lastId = pinesID[pinesID.length - 1];
+function doBuclePins(pinesID, pinsManager, state, onComplete) {
+  const currentId = pinesID[state.contadorIndice];
+  const previousId = state.contadorIndice > 0 ? pinesID[state.contadorIndice - 1] : pinesID[pinesID.length - 1];
   pinsManager.getPinById(currentId).high();
-  // pines[].high();
+  pinsManager.getPinById(previousId).low();
 
-  if (contadorIndice > 0) {
-    previousId = pinesID[contadorIndice - 1];
-    pinsManager.getPinById(previousId).low();
-    // pines[previousId].low();
+  state.contadorIndice++;
+  if (state.contadorIndice >= pinesID.length) {
+    state.contadorIndice = 0;
+    if (onComplete) onComplete();
   }
-  else {
-    pinsManager.getPinById(lastId).low();
-    // pines[lastId].low();   
-  }
-
-  contadorIndice++;
-
-  if (contadorIndice >= pinesID.length) {
-    contadorIndice = 0;
-    if (isOnce) clearInterval(bucleID);
-  }
-
-
 }
+
+export { prenderEn, apagarEn };

@@ -1,5 +1,8 @@
+import { getBoard } from '../boards';
+
 class PinsManager {
-  constructor(isDebugging = false) {
+  constructor(board, isDebugging = false) {
+    this.board = board;
     this.pins = new Set();
     this.j5Pins = new Array();
     this.isDebugging = isDebugging;
@@ -30,7 +33,7 @@ class PinsManager {
             }
           };
         } else {
-          pinObj = new five.Pin({ pin, mode: 1 });
+          pinObj = new five.Pin({ pin, mode: 1, board: this.board });
         }
         pinObj.low();
         this.j5Pins.push(pinObj);
@@ -68,9 +71,20 @@ class PinsManager {
     })
   }
 }
-const pinsManager = new PinsManager();//exporting an instance makes it the only instance, i.e. a singleton
+const pinsManagers = new WeakMap();
 
-function checkPins(pinesIds, sender) {
+function getPinsManager(board) {
+  const arduino = getBoard(board);
+  let pinsManager = pinsManagers.get(arduino);
+  if (!pinsManager) {
+    pinsManager = new PinsManager(arduino);
+    pinsManagers.set(arduino, pinsManager);
+  }
+  return pinsManager;
+}
+
+function checkPins(pinesIds, sender, board) {
+  const pinsManager = getPinsManager(board);
   console.log("[checkPins] pinesIds :", pinesIds)
   const output = pinsManager.check(pinesIds);
   if (!output) {
@@ -80,4 +94,4 @@ function checkPins(pinesIds, sender) {
   return output;
 }
 
-export { pinsManager, checkPins };
+export { getPinsManager, checkPins };
