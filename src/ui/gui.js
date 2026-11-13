@@ -9,15 +9,7 @@ const gui = new GUI();
 
 gui.add(window.location, 'reload').name('recargar');
 
-const initArduinoController = gui.add({ init }, 'init').name('iniciar');
-
-// Una vez el arduino está conectado e identificado (evento 'ready' de
-// johnny-five, ver controlSystem.js) ya no hace falta el botón "iniciar".
-// Se escucha por evento en vez de importar controlSystem.js directamente
-// para evitar una dependencia circular (gui.js -> init.js -> controlSystem.js).
-window.addEventListener('arduino-ready', () => {
-  initArduinoController.destroy();
-}, { once: true });
+gui.add({ init }, 'init').name('agregar Arduino');
 
 export function setupThemeController(editor) {
   const themeController = new ThemeController(editor, gui);
