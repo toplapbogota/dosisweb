@@ -1,4 +1,12 @@
 ```js
+// Use "agregar Arduino" in the GUI for each board, then select its generated ID.
+// IDs are available in the global boards Map (for example: [...boards.keys()]).
+selectBoard("arduino-2");
+prender(13); // targets arduino-2
+
+// Configuration-based wrappers can also target a board directly.
+servo({ board: "arduino-1", pin: 2, estado: 2, start: 0, final: 90, tiempo: 0, pasos: 0 });
+
 prender(13)
 
 
